@@ -111,7 +111,7 @@ int main () {
 			// check if vertical
 			// check if ball is still within X,
 			if (rightPlayer.bottom_y > ball.y - ball.radius/2 && rightPlayer.y<ball.y+ball.radius/2 
-				&& rightPlayer.right_x > ball.x + ball.radius/8)
+				&& rightPlayer.x > ball.x + ball.radius/8)
 			// added 1/6th radius of buffer for paddle on the X direction 
 			// added half radius as buffer for paddle on the Y direction
 			// added time buff for debouncer (this is dependent on the X buffer math / speed)
