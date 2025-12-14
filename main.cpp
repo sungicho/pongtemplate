@@ -6,13 +6,13 @@ using namespace std;
 
 const int SCREEN_WIDTH = 1000;
 const int SCREEN_HEIGHT = 800;
-const int PADDLE_EDGE_SPACE = 20;
+const int PADDLE_EDGE_SPACE = 25;
 const int PADDLE_WIDTH = 30; 
 const int PADDLE_HEIGHT = 150;
 int playerspeed = 5; 
 int playerStart = SCREEN_HEIGHT/2;
-	int rightScore = 0;
-	int leftScore = 0;
+int rightScore = 0;
+int leftScore = 0;
 
 
 class Ball{
@@ -46,8 +46,11 @@ public:
 class Paddle{
 public:
 	float x, y; 
+	float right_x = x+PADDLE_WIDTH;
+	float bottom_y = y+PADDLE_HEIGHT;
 	int score;
 	int speed_y;
+
 	void Draw(Color color){
 		// upper left corner draw;
 		DrawRectangle(x, y, PADDLE_WIDTH, PADDLE_HEIGHT, color);
@@ -72,9 +75,9 @@ int main () {
 	Paddle leftPlayer;
 	Paddle rightPlayer;
 	Ball ball;
-	leftPlayer.x = 10; 
+	leftPlayer.x = PADDLE_EDGE_SPACE; 
 	leftPlayer.y = playerStart;
-	rightPlayer.x = SCREEN_WIDTH - PADDLE_WIDTH - 10;
+	rightPlayer.x = SCREEN_WIDTH - PADDLE_WIDTH - PADDLE_EDGE_SPACE;
 	rightPlayer.y = playerStart;
 	leftPlayer.speed_y = 8;
 	rightPlayer.speed_y = 8;
@@ -101,8 +104,11 @@ int main () {
 			leftPlayer.Update(KEY_W, KEY_S);
 			rightPlayer.Draw(BLUE);
 			rightPlayer.Update(KEY_UP, KEY_DOWN);
-			if (leftPlayer.y < ball.y && (leftPlayer.y - PADDLE_HEIGHT) > ball.y){
-				rightScore++;
+			// add collision detection here 
+			// check if vertical
+		// check if ball is still within X,
+			if (leftPlayer.bottom_y > ball.y +ball.radius/2 && leftPlayer.y<ball.y-ball.radius/2){
+				ball.speed_x*=-1.1;
 			}
 			const char* r = to_string(rightScore).c_str();
 			const char* l = to_string(leftScore).c_str();
