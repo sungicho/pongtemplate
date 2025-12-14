@@ -20,7 +20,6 @@ public:
 	float x, y;
 	int speed_x, speed_y; 
 	int radius;
-
 	void Draw(){
 		DrawCircle(x, y, radius, WHITE);
 	}
@@ -46,8 +45,8 @@ public:
 class Paddle{
 public:
 	float x, y; 
-	float right_x = x+PADDLE_WIDTH;
-	float bottom_y = y+PADDLE_HEIGHT;
+	float right_x;
+	float bottom_y;
 	int score;
 	int speed_y;
 
@@ -77,6 +76,10 @@ int main () {
 	Ball ball;
 	leftPlayer.x = PADDLE_EDGE_SPACE; 
 	leftPlayer.y = playerStart;
+	leftPlayer.bottom_y = leftPlayer.y+PADDLE_HEIGHT;
+	rightPlayer.bottom_y = rightPlayer.y + PADDLE_HEIGHT;
+	leftPlayer.right_x = leftPlayer.x + PADDLE_WIDTH;
+	rightPlayer.right_x = rightPlayer.x + PADDLE_WIDTH;
 	rightPlayer.x = SCREEN_WIDTH - PADDLE_WIDTH - PADDLE_EDGE_SPACE;
 	rightPlayer.y = playerStart;
 	leftPlayer.speed_y = 8;
@@ -87,7 +90,7 @@ int main () {
 	ball.speed_x = 5;
 	ball.speed_y = 5;
 	ball.radius = 15;
-
+	
 
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Pong >> Tetris - Sungi");
 	SetTargetFPS(120);
@@ -97,7 +100,7 @@ int main () {
 
 			// mid goal line 
 			DrawLine(SCREEN_WIDTH/2,SCREEN_HEIGHT, SCREEN_WIDTH/2, SCREEN_HEIGHT, GRAY);
-			DrawFPS(10,10); // remove if necessary; 
+			DrawFPS(20,20); // remove if necessary; 
 			ball.Draw();
 			ball.Update();
 			leftPlayer.Draw(WHITE);
@@ -106,9 +109,24 @@ int main () {
 			rightPlayer.Update(KEY_UP, KEY_DOWN);
 			// add collision detection here 
 			// check if vertical
-		// check if ball is still within X,
-			if (leftPlayer.bottom_y > ball.y +ball.radius/2 && leftPlayer.y<ball.y-ball.radius/2){
+			// check if ball is still within X,
+			if (rightPlayer.bottom_y > ball.y - ball.radius/2 && rightPlayer.y<ball.y+ball.radius/2 
+				&& rightPlayer.right_x > ball.x + ball.radius/8)
+			// added 1/6th radius of buffer for paddle on the X direction 
+			// added half radius as buffer for paddle on the Y direction
+			// added time buff for debouncer (this is dependent on the X buffer math / speed)
+			{
 				ball.speed_x*=-1.1;
+				//ball.speed_y*=-1.1;
+			}
+			if (leftPlayer.bottom_y > ball.y - ball.radius/2 && leftPlayer.y<ball.y+ball.radius/2 
+					&& leftPlayer.right_x > ball.x + ball.radius/8)
+			// added 1/6th radius of buffer for paddle on the X direction 
+			// added half radius as buffer for paddle on the Y direction
+			// added time buff for debouncer (this is dependent on the X buffer math / speed)
+			{
+				ball.speed_x*=-1.1;
+				//ball.speed_y*=-1.1;
 			}
 			const char* r = to_string(rightScore).c_str();
 			const char* l = to_string(leftScore).c_str();
@@ -119,5 +137,4 @@ int main () {
 
         EndDrawing();
     }
-
 }
