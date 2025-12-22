@@ -2,8 +2,10 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Set the project name (will be the executable name) and language
-project(Raylib_App CXX)
+project(ChessProject CXX)
 
+# create export compile for lsp
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Set the C++ standard to 17 (recommended for raylib-cpp)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -17,6 +19,7 @@ file(GLOB_RECURSE PROJECT_SOURCES
     "src/*.cpp"
     "src/*.c"
     "main.cpp"
+	"assets/*"
 )
 
 # --- Raylib Dependency Setup ---
