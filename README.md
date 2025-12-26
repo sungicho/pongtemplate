@@ -25,10 +25,12 @@ OBJECTIVE: Capture Enemy King
 ### Gameplay (non-game mechanics)
 - [ ] moving camera pan (up and down) for larger maps
 - [X] create selector square to show square/piece selected
-- [ ] selector square to move below pieces 
+- [x] selector square to move below pieces 
+- [ ] selector square shows possible moves (red for attack squares)
+    - build this only for selected piece
+- [ ] selector square mvoes pieces to possibl 
 - [ ] create an info box showing node information (or piece info)
 - [ ] create an A>Z and a ## 1-20 grid pattern (like standard chess grid)
-
 
 ### Game Mechanics 
 - [x] create matrix for board
@@ -38,6 +40,8 @@ OBJECTIVE: Capture Enemy King
 - [ ] add resources randomly in field
 - [ ] create timer that shows queen <> king pair
 - [ ] create pawn spawn
+- [ ] create non-movable squares
+
 
 #### Opponent / AI Mechanics
 - [ ] create movement map
@@ -49,11 +53,6 @@ OBJECTIVE: Capture Enemy King
 - [ ] make mouse movement
 - [ ] tab select pieces
 - [ ] 
-
-
-
-
-
 
 
 ## General Strategy
@@ -72,4 +71,8 @@ OBJECTIVE: Capture Enemy King
 - Short Map - 10 ores, 2 stone; 
 - Long Map - Lots of resources + start with Knight and Queen neutral queen 
 
+------- 
+
+## FUTURE ROADMAP
+- [ ] create "jumpable" or move cost squares - this may be removable (adds too much complexity - shelved for v2)
 
