@@ -21,6 +21,10 @@ OBJECTIVE: Capture Enemy King
 - 1 Neutral Queen + pawn in the game
 - 1 Pawn every 4 turns the queen and king are together;
 
+## Bugg List
+- [ ] selector squares cant overcast and delte units
+
+
 ## PROJECT ROADMAP:
 ### Gameplay (non-game mechanics)
 - [ ] change to correct GH
@@ -29,9 +33,10 @@ OBJECTIVE: Capture Enemy King
 - [x] selector square to move below pieces 
 - [ ] selector square shows possible moves (red for attack squares)
     - build this only for selected piece
-- [ ] selector square mvoes pieces to possibl 
+- [ ] selector square mvoes pieces to possible
 - [ ] create an info box showing node information (or piece info)
 - [ ] create an A>Z and a ## 1-20 grid pattern (like standard chess grid)
+- [ ] create a turn counter to count 
 
 ### Game Mechanics 
 - [x] create matrix for board
@@ -43,6 +48,7 @@ OBJECTIVE: Capture Enemy King
 - [ ] create timer that shows queen <> king pair
 - [ ] create pawn spawn
 - [ ] create non-movable squares
+- [ ] create a graphic that shows "mining" by pawns;
 
 
 #### Opponent / AI Mechanics

@@ -158,6 +158,34 @@ public:
 			available.push_back({-1,-2});
 			available.push_back({1,-2});
 		}
+		if (type =="rook"){
+			for (int i = 0; i<=8; i++){
+				available.push_back({i,0});
+				available.push_back({0,i});
+				available.push_back({-i,0});
+				available.push_back({0,-i});
+			}
+		}	
+		if (type =="bishop"){
+			for (int i = 0; i<=8; i++){
+				available.push_back({i,i});
+				available.push_back({-i,i});
+				available.push_back({i,-i});
+				available.push_back({-i,-i});
+			}
+		}	
+		if (type =="Queen"){
+			for (int i = 0; i<=8; i++){
+				available.push_back({i,i});
+				available.push_back({-i,i});
+				available.push_back({i,-i});
+				available.push_back({-i,-i});
+				available.push_back({i,0});
+				available.push_back({0,i});
+				available.push_back({-i,0});
+				available.push_back({0,-i});
+			}
+		}
 	
 		return available;
 	}
@@ -247,6 +275,19 @@ public:
 			}
 		}
 	}
+	
+	// TODO: need to validate enemy position
+	bool isValidMove(string key, int tx, int ty){
+		Piece activePiece = activePieces.find(key)->second;
+		std::vector<std::array<int,2>> available = activePiece.availableMoves();
+		for (std::array<int,2> i: available){
+			if (activePiece.x+i[0]== tx && activePiece.y+i[1]== ty && boardKey[tx][ty] == "000000"){
+				return true;
+			}
+		}
+		return false;
+	}
+
 	void updateBoardKey(Piece piece, int oldx, int oldy){
 		activePieces[piece.key] = piece;
 		boardKey[oldx][oldy] = "000000";
@@ -306,6 +347,7 @@ private:
 	double lastBlink = 0; 
 	uint16_t cursBuff = 8;
 	double lastKeyPress = 0;
+	double lastCursorPress = 0;
 	Piece selectedPiece, buffPiece;
 	std::string selectedKey;
 	std::string key;
@@ -318,6 +360,8 @@ public:
 	Ore ore; 
 	uint16_t x, y;
 	int selectedX=0, selectedY=0;
+	bool master = false;
+	int Up_Key = KEY_W, Down_Key = KEY_S, Right_Key = KEY_D, Left_Key = KEY_A;
 
 	void init(int ix = 0, int iy=0, Color color = PINK){
 		x = 4;
@@ -361,24 +405,33 @@ public:
 
 	void update(Board *board){
 		// TODO: bounce off last key press timer;
-		if (IsKeyDown(KEY_D) && x<BOARDWIDTH-1){
+		std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+		double nowDouble = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+		double cursorDebounce = 80;
+		double delta = nowDouble - lastCursorPress;
+
+		if (IsKeyDown(Right_Key) && x<BOARDWIDTH-1 && delta>cursorDebounce){
 			x++;
+			lastCursorPress = nowDouble;
 		}
-		if (IsKeyDown(KEY_A) && x>0){
+		if (IsKeyDown(Left_Key) && x>0 && delta>cursorDebounce){
 			x--;
+			lastCursorPress = nowDouble;
 		}
-		if (IsKeyDown(KEY_S) && y>0){
+		if (IsKeyDown(KEY_S) && y>0 && delta>cursorDebounce){
 			y--;
+			lastCursorPress = nowDouble;
 		}
-		if (IsKeyDown(KEY_W) && y < BOARDHEIGHT-1){
+		if (IsKeyDown(KEY_W) && y < BOARDHEIGHT-1 && delta>cursorDebounce){
 			y++;
+			lastCursorPress = nowDouble;
 		}
 		key = board->boardKey[x][y];
 
-		std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-		double nowDouble = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-		double debounce = 500;
-		double delta = nowDouble - lastKeyPress;
+		now = std::chrono::system_clock::now();
+		nowDouble = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+		double debounce = 300;
+		delta = nowDouble - lastKeyPress;
 		// TODO: need to change this to off-select the cursor once plyaer hits space a second time
 
 		if (IsKeyDown(KEY_SPACE) && delta > debounce && key != "000000" && !pieceSelected){
@@ -402,7 +455,7 @@ public:
 		debounce = 500;
 		delta = nowDouble - lastKeyPress;
 
-		if (IsKeyDown(KEY_SPACE) && delta > debounce && pieceSelected){
+		if (IsKeyDown(KEY_SPACE) && delta > debounce && pieceSelected && board->isValidMove(selectedKey,x ,y)){
 			pieceSelected = !pieceSelected;
 			lastKeyPress = nowDouble;
 			board->boardKey[selectedX][selectedY] = "000000";
@@ -644,11 +697,12 @@ int main () {
 		std::cout << "StartupInit: " << startupInit << " ;  testInit:" << testInit << "\n";
 		std::cout<<  "Knight- X:" << board.activePieces["n001-w"].x << " ;  Y: " << board.activePieces["n001-w"].y << "\n";
 
-		int nx = board.activePieces["n001-w"].x;
-		int ny = board.activePieces["n001-w"].x;
-		board.boardKey[nx][ny] = "0x0x0x";
-		board.activePieces["n001-w"].x= 10;
-		board.activePieces["n001-w"].y= 10;
+//		int nx = board.activePieces["n001-w"].x;
+//		int ny = board.activePieces["n001-w"].y;
+//		boardPointer->boardKey[nx][ny] = "0x0x0x";
+//		boardPointer->activePieces["n001-w"].x= 10;
+//		boardPointer->activePieces["n001-w"].y= 10;
+//		boardPointer->boardKey[10][10] = "n001-w";
 		drawPieces(textures, *boardPointer);
 		firstCopper.draw(6,6);
 		board.printActivePieces();
