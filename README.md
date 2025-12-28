@@ -23,6 +23,7 @@ OBJECTIVE: Capture Enemy King
 
 ## PROJECT ROADMAP:
 ### Gameplay (non-game mechanics)
+- [ ] change to correct GH
 - [ ] moving camera pan (up and down) for larger maps
 - [X] create selector square to show square/piece selected
 - [x] selector square to move below pieces 
@@ -34,6 +35,7 @@ OBJECTIVE: Capture Enemy King
 
 ### Game Mechanics 
 - [x] create matrix for board
+- [ ] add ores to board
 - [ ] add movement to pawn
 - [ ] add movement to knight
 - [ ] add pawn upgrade to knight

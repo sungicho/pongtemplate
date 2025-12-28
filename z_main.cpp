@@ -5,6 +5,7 @@
 #include <vector>
 #include <variant>
 #include<unordered_map>
+// #include <random> 
 
 // Screen sizing
 #define SCREEN_WIDTH 1280
@@ -18,36 +19,38 @@ using namespace std;
 const uint16_t BOARDWIDTH = 12;
 const uint16_t BOARDHEIGHT = 12;
 
-
-class TextureHold{
+class Error {
 public:
-	Texture2D KingTexture;
-	Texture2D PawnTexture;
-	Texture2D KnightTexture;
-	Texture2D BishopTexture;
-	Texture2D QueenTexture;
-	Texture2D RookTexture;
-	Texture2D Ore;
+	// TODO: need to add error type
+	string errorS;
+	std::vector<std::string> errorList;
+	void printErrors(){
+		for (int i = 0; i<errorList.size(); i++){
+			std::cout<< errorList[i] << "\n";
+		}
+	}
 
+	// FIX: prevent this from printing out same error multiple times;
+	// TODO: need to check for error duplication 
 };
 
-
-class Error{
-};
-
+bool keyPressBounce(double debounce, KeyboardKey key, double lastKeyPress){
+	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+	double nowDouble = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+	double timeDelta = nowDouble - lastKeyPress;
+	if (timeDelta> debounce){
+		return true;
+	}
+	else return false;
+}
 class Ore{
 public:
 	Texture2D texture; 
 	uint16_t x, y; 
 	uint16_t size;
-	int texWidth = 48;
-	int texHeight = 48;
 
-
-	void draw(uint16_t x = 0, uint16_t y = 0){
-		int cx = x * TILE + FRAME_BUFFER - texWidth + TILE;
-		int cy = (BOARDHEIGHT - y-1) * TILE + FRAME_BUFFER -texHeight + TILE;
-		DrawTexture(texture, cx, cy, ORANGE);
+void draw(uint16_t x = 0, uint16_t y = 0){
+		DrawTexture(texture, x, y, ORANGE);
 	}
 };
 
@@ -73,41 +76,19 @@ public:
 		key = ikey;
 	}
 
-	void draw( TextureHold TXH,int ix = 400, int iy = 400, bool elevated = false, bool flying = false){
+/*	void draw(int ix = 400, int iy = 400, bool elevated = false, bool flying = false){
 		x = ix;
 		y = iy;
-		Texture2D texture;
-		
 		if (type == "pawn"){
 			texHeight = 48;
 			texWidth = 48;
-			texture = TXH.PawnTexture;
-		}
-		if (type == "Queen") {
-			texHeight = 64;
-			texWidth= 56;
-			texture = TXH.QueenTexture;
+			texture = LoadTexture("../assets/white-pawn48.png");
 		}
 		if (type == "King") {
+			texture = LoadTexture("../assets/white-king64.png");
 			texHeight = 64;
 			texWidth= 56;
-			texture = TXH.KingTexture;
-		}
-		if (type == "knight") {
-			texHeight = 48;
-			texWidth= 48;
-			texture = TXH.KnightTexture;
-		}
-		if (type == "rook") {
-			texHeight = 48;
-			texWidth= 48;
-			texture = TXH.RookTexture;
-		}	
-		if (type == "bishop") {
-			texHeight = 48;
-			texWidth= 48;
-			texture = TXH.BishopTexture;
-		}
+			}
 //		if (type == "knight") texture =LoadTexture("../assets/white-knight48.png");
 		cx = x * TILE + FRAME_BUFFER - texWidth + TILE;
 		cy = (BOARDHEIGHT - y-1) * TILE + FRAME_BUFFER -texHeight + TILE;
@@ -121,9 +102,7 @@ public:
 //		firstKnight.texture = LoadTexture("../assets/white-knight48.png");
 //		firstKnight.draw(FRAME_BUFFER + 4*TILE, FRAME_BUFFER + 4*TILE);
 //		firstCopper.texture = LoadTexture("../assets/Orange3Rock.PNG");
-		//UnloadTexture(texture)	kk;
-	} 
-
+	}  */
 
 
 	std::vector<std::array<int, 2>> availableMoves(){
@@ -161,8 +140,15 @@ public:
 	
 		return available;
 	}
-};
 
+// TODO: add different piece types here; 
+	void parse(){
+		
+	}
+	void unload (){
+		UnloadTexture(texture);
+	}
+};
 
 void drawCursorBoxes(int x, int y, std::array<int,2> z = {0,0}, Color color = WHITE){
 	x += z[0];
@@ -185,6 +171,11 @@ void drawCursorBoxes(int x, int y, std::array<int,2> z = {0,0}, Color color = WH
 			
 	}
 }
+
+class Player {
+	std::vector<Piece> pieces;
+};
+
 
 class Board{
 public: 
@@ -247,17 +238,19 @@ public:
 			}
 		}
 	}
-	void updateBoardKey(Piece piece, int oldx, int oldy){
-		activePieces[piece.key] = piece;
-		boardKey[oldx][oldy] = "000000";
-		boardKey[piece.x][piece.y] = piece.key;
-
-	}
+//	void updateBoardKey(){
+//		for (int i= BOARDHEIGHT-1; i>=0; i--){
+//			for (int j = 0; j< BOARDWIDTH; j++){
+//				boardKey[j][i] = boardClass[j][i].key; 
+//			}
+//		}
+//	}
 
 	void addPieceToBoard(Piece ipiece){
 		boardKey[ipiece.x][ipiece.y] = ipiece.key;
 		activePieces.insert({ipiece.key,ipiece});
 		keys.push_back(ipiece.key);
+		//updateBoardKey();
 		// TODO: add class function here based on board. 
 	}
 
@@ -268,7 +261,7 @@ public:
 		for (auto& key: activePieces){
 			keyList.push_back(key.first);
 		}
-		for (int i=0; i<keyList.size(); i++){ 
+		for (int i=0; i<=keyList.size(); i++){ 
 			std::cout << keyList[i] << ", ";
 		}
 		std::cout << "\n";
@@ -306,18 +299,18 @@ private:
 	double lastBlink = 0; 
 	uint16_t cursBuff = 8;
 	double lastKeyPress = 0;
-	Piece selectedPiece, buffPiece;
+	Piece selectedPiece;
 	std::string selectedKey;
-	std::string key;
-	bool pieceSelected ;
-	std::string tf ="";
 
 public:
 	int cx = BOARDWIDTH, cy = BOARDHEIGHT;
 	Piece piece;
 	Ore ore; 
 	uint16_t x, y;
+	std::string key;
+	bool pieceSelected = false;
 	int selectedX=0, selectedY=0;
+	
 
 	void init(int ix = 0, int iy=0, Color color = PINK){
 		x = 4;
@@ -328,7 +321,7 @@ public:
 
 	// TODO: center up cursor board
 	// TODO: buff up cursor square to make it more visible
-	void draw(int ix= 0, int iy =0, Color color = PINK ){
+	void draw(int ix= 0, int iy =0, Color color = PINK, bool selected = false ){
 		x = ix;
 		y = iy;
 		// blinks cursor same time on / off pattern; 
@@ -342,7 +335,8 @@ public:
 		float f_cy = static_cast<float> (cy);
 		float f_x = static_cast<float> (TILE - cursBuff*2-1);
 		if (pieceSelected) color = RED;
-		//else color = WHITE; 
+		else color = WHITE; 
+		if (!selected){
 			if (blinkOn){	
 				DrawRectangleLinesEx((Rectangle){f_cx, f_cy, f_x, f_x}, 5.0f, color);
 			}
@@ -354,12 +348,13 @@ public:
 				blinkOn = !blinkOn;
 				lastBlink = nowDouble;
 			}
-		//else{
-		//	DrawRectangleLinesEx((Rectangle){f_cx, f_cy, f_x, f_x}, 5.0f, color);
-		//}
+		}
+		else{
+			DrawRectangleLinesEx((Rectangle){f_cx, f_cy, f_x, f_x}, 5.0f, color);
+		}
 	}
 
-	void update(Board *board){
+	void update(Board board){
 		// TODO: bounce off last key press timer;
 		if (IsKeyDown(KEY_D) && x<BOARDWIDTH-1){
 			x++;
@@ -373,53 +368,35 @@ public:
 		if (IsKeyDown(KEY_W) && y < BOARDHEIGHT-1){
 			y++;
 		}
-		key = board->boardKey[x][y];
+		key = board.boardKey[x][y];
 
 		std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 		double nowDouble = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 		double debounce = 500;
 		double delta = nowDouble - lastKeyPress;
 		// TODO: need to change this to off-select the cursor once plyaer hits space a second time
-
 		if (IsKeyDown(KEY_SPACE) && delta > debounce && key != "000000" && !pieceSelected){
 			pieceSelected = true;
 			lastKeyPress = nowDouble;
 			selectedX = x; 
 			selectedY = y;
-			buffPiece = board->activePieces[key];
-			selectedKey = buffPiece.key;
+			selectedPiece = piece;
+			selectedKey = piece.key;
+
 		}
-		if (pieceSelected) tf = "TRUE";
-		else tf = "FALSE";
-		std::cout<< "SELECTION: "<<tf << "\n";
-
-		std::cout<< "Selected KEY: " << selectedKey<< ";  S-X: "<< buffPiece.x << ";  Y: " << buffPiece.y <<"\n";
-		std::cout<< "SelectedX: " << selectedX<< " ; SELECTED Y:  "<< selectedY << "\n";
-		std::cout<< "X: " << x << " ;  Y:" << y << "\n";
-		std::cout<< "Delta: " << delta <<" Now: " << nowDouble << " ;  lastKeyPress:" << lastKeyPress << "\n";
-		now = std::chrono::system_clock::now();
-		nowDouble = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-		debounce = 500;
-		delta = nowDouble - lastKeyPress;
-
-		if (IsKeyDown(KEY_SPACE) && delta > debounce && pieceSelected){
-			pieceSelected = !pieceSelected;
+		if (IsKeyDown(KEY_SPACE) && delta > debounce && pieceSelected && key == "000000"){
+			pieceSelected = false;
 			lastKeyPress = nowDouble;
-			board->boardKey[selectedX][selectedY] = "000000";
-			board->boardKey[x][y] = selectedKey;
-			board->activePieces[selectedKey].x = x;
-			board->activePieces[selectedKey].y = y;
-			std::string key = selectedKey;
-			const char* c_key = key.c_str();
-			DrawText(c_key, 250, 10, 30, WHITE);		
+			auto piece = board.activePieces.find(selectedKey);
+			//board.updateBoardKey();
 		}
 
 		if (pieceSelected){
 			// TODO: need to have this persist for the last one since last clicked
 			std::string key = "Pressed";
 			const char* c_key = key.c_str();
-			DrawText(c_key, 150, 10, 30, WHITE);
-			board->showMoves(selectedX, selectedY);
+			DrawText(c_key, x+150, y+10, 30, WHITE);
+			board.showMoves(selectedX, selectedY);
 		}
 		
 	// ----- required if having cursor errors ------///
@@ -437,6 +414,43 @@ public:
 		if (cy>BOARDHEIGHT-1) cx = BOARDHEIGHT -1;
 	}
 };
+class Background{
+
+public:
+	Texture2D grass;
+	int grassWidth;
+	int grassHeight;
+	//
+	// TODO: create numbering and display it behind (letters for columns and numbers for rows);
+	void drawPlayable (){
+		int topx = FRAME_BUFFER; 
+		int topy = FRAME_BUFFER; 
+
+			// FIX: THIS
+		DrawTexture(grass, 1000, 400, ORANGE);
+			
+		int widthMultiple = grassWidth / TILE;
+		int heightMultiple = grassHeight / TILE;
+		for (int i = 0; i< BOARDWIDTH / widthMultiple ; i++){
+			for (int j = 0; j< BOARDHEIGHT / heightMultiple; j++){
+				DrawTexture(grass, i*grassWidth + FRAME_BUFFER, j*grassHeight + FRAME_BUFFER, ORANGE);
+			}
+		}
+		DrawLine(20,20, FRAME_BUFFER + BOARDWIDTH* TILE, topy + TILE, WHITE);
+		//rows
+		for (int i = 0; i<= BOARDHEIGHT; i++){
+			DrawLine(topx, topy + i*TILE, FRAME_BUFFER + BOARDWIDTH* TILE, topy + i*TILE, WHITE);
+		}
+		//columnns
+		for (int i = 0; i<=BOARDWIDTH; i++){
+			DrawLine(topx + i*TILE, topy, topx + i*TILE, FRAME_BUFFER + BOARDHEIGHT*TILE, WHITE); 
+		}
+
+		
+		const char* score = "SCORE";
+		DrawText( score, SCREEN_WIDTH*3/4 - 80*3/2, SCREEN_HEIGHT/10 , 80, WHITE);
+	}
+};
 
 class Tooltip{
 private:
@@ -445,7 +459,7 @@ private:
 	float width = SCREEN_WIDTH - (BOARDWIDTH*TILE + FRAME_BUFFER *3);
 	float height = SCREEN_HEIGHT /2;
 public: 
-	int pos_x = 5, pos_y =5;
+	int pos_x, pos_y;
 	std::string name; 
 
 	void assignPiece(Piece piece){
@@ -474,35 +488,29 @@ public:
 
 	void displayCursor(Board board, TileCursor curs){
 		std::string pieceKey = board.boardKey[curs.x][curs.y];
-		if (pieceKey != "000000"){
-	//		Piece piece = board.activePieces.find(pieceKey$ 
-			std::cout<< "cursor piece: X: " << curs.x << ";  Y: " << curs.y  << "\n";
-			Piece piece = board.activePieces.find(pieceKey)->second;
-			assignPiece(piece);
-		
-			// TODO: need to fix this for 2 digits or bigger boards;
-			const char* c_name = name.c_str();
-			DrawText(c_name, x+50, y+10, 30, WHITE);
-			std::string key = board.boardKey[curs.x][curs.y];
-			const char* c_key = key.c_str();
-			DrawText(c_key, x+150, y+10, 30, WHITE);
-			string s_pos_x = std::to_string(curs.x);
-			const char* c_pos_x = s_pos_x.c_str();
-			string s_pos_y = std::to_string(curs.y);
-			const char* c_pos_y = s_pos_y.c_str();
-			std::string strcurs = "Cursor: ";
-			const char* c_curs = strcurs.c_str();
-			DrawText(c_curs, x+20, y+50 , 20, WHITE);
-			DrawText(c_pos_x, x+120, y+50, 20, WHITE);
-			std::string x_str = "X: ";
-			const char* c_x_str = x_str.c_str();
-			DrawText(c_x_str, x+100, y+50, 20, WHITE);
-			std::string y_str = "Y: ";
-			const char* c_y_str = y_str.c_str();
-			DrawText(c_y_str, x+150, y+50, 20, WHITE);
-			DrawText(c_pos_y, x+170, y+50, 20, WHITE);
-		}
-
+		Piece piece = board.activePieces.find(pieceKey)->second;
+		assignPiece(piece);
+		// TODO: need to fix this for 2 digits or bigger boards;
+		const char* c_name = name.c_str();
+		DrawText(c_name, x+50, y+10, 30, WHITE);
+		std::string key = board.boardKey[curs.x][curs.y];
+		const char* c_key = key.c_str();
+		DrawText(c_key, x+150, y+10, 30, WHITE);
+		string s_pos_x = std::to_string(curs.x);
+		const char* c_pos_x = s_pos_x.c_str();
+		string s_pos_y = std::to_string(curs.y);
+		const char* c_pos_y = s_pos_y.c_str();
+		std::string strcurs = "Cursor: ";
+		const char* c_curs = strcurs.c_str();
+		DrawText(c_curs, x+20, y+50 , 20, WHITE);
+		DrawText(c_pos_x, x+120, y+50, 20, WHITE);
+		std::string x_str = "X: ";
+		const char* c_x_str = x_str.c_str();
+		DrawText(c_x_str, x+100, y+50, 20, WHITE);
+		std::string y_str = "Y: ";
+		const char* c_y_str = y_str.c_str();
+		DrawText(c_y_str, x+150, y+50, 20, WHITE);
+		DrawText(c_pos_y, x+170, y+50, 20, WHITE);
 	}
 
 	void displayPiece(Piece piece){
@@ -523,62 +531,49 @@ public:
 	}
 };
 
-	
-class Background{
+// NOTE: note used
 
-public:
-	Texture2D grass;
-	int grassWidth;
-	int grassHeight;
-	//
-	// TODO: create numbering and display it behind (letters for columns and numbers for rows);
-	void drawPlayable (){
-		int topx = FRAME_BUFFER; 
-		int topy = FRAME_BUFFER; 
 
-		int widthMultiple = grassWidth / TILE;
-		int heightMultiple = grassHeight / TILE;
-		for (int i = 0; i< BOARDWIDTH / widthMultiple ; i++){
-			for (int j = 0; j< BOARDHEIGHT / heightMultiple; j++){
-				DrawTexture(grass, i*grassWidth + FRAME_BUFFER, j*grassHeight + FRAME_BUFFER, ORANGE);
-			}
-		}
-		//rows
-		for (int i = 0; i<= BOARDHEIGHT; i++){
-			DrawLine(topx, topy + i*TILE, FRAME_BUFFER + BOARDWIDTH* TILE, topy + i*TILE, WHITE);
-		}
-		//columnns
-		for (int i = 0; i<=BOARDWIDTH; i++){
-			DrawLine(topx + i*TILE, topy, topx + i*TILE, FRAME_BUFFER + BOARDHEIGHT*TILE, WHITE); 
-		}
 
-		
-		const char* score = "SCORE";
-		DrawText( score, SCREEN_WIDTH*3/4 - 80*3/2, SCREEN_HEIGHT/10 , 80, WHITE);
+
+
+
+
+// BUG: is not completely unloaded the texture. 
+void unloadPieces(Board board){
+	std::vector<std::string> keyList;
+	for (auto& key: board.activePieces){
+		keyList.push_back(key.first);
 	}
-};
-
-void drawPieces(TextureHold txh, Board board){
-	for (int i=0; i<board.keys.size(); i++){ 
-		Piece piece = board.activePieces[board.keys[i]];
-		//Piece piece = board.activePieces.find(board.keys[i])->second;
-		piece.draw(txh, piece.x, piece.y);
-		//UnloadTexture(piece.texture);
+	for (int i=0; i<=keyList.size(); i++){ 
+		Piece piece = board.activePieces.find(keyList[i])->second;
+		UnloadTexture(piece.texture);
 	}
 }
 
-//------------- MAIN ------------//
+void drawPieces(Board board){
+	std::vector<std::string> keyList;
+	for (auto& key: board.activePieces){
+		keyList.push_back(key.first);
+	}
+	for (int i=0; i<=keyList.size(); i++){ 
+		Piece piece = board.activePieces.find(keyList[i])->second;
+		//FIX: FIX THIS once working
+		//Opiece.draw(piece.x,piece.y);
+	}
+}
+
 int main () {
 	bool startupInit = false; 
 	Error currentError; 
 	bool startupTestPawn = false;
-	TextureHold textures;
+	Tooltip tt;
 
-	TileCursor myCursor;
-	Background bg;
-	Board board;
 	double lastKeyPress= 0;
 	// initilizing ball and players
+	Board board; 
+	TileCursor testCursor;
+	TileCursor myCursor;
 	Piece firstPawn;
 	Piece testPawn;
 	Piece secondPawn;
@@ -588,85 +583,92 @@ int main () {
 	Piece firstKnight;
 	Piece firstBishop;
 	Ore firstCopper;
-	Tooltip tt;
+	Background bg;
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Chess");
 	SetTargetFPS(60);
-
-	bool testInit = false;
 
     while (WindowShouldClose() == false){
 		BeginDrawing();
 		ClearBackground(BLACK);
-		DrawFPS(20,20); // remove if necessary; 
-		textures.PawnTexture = LoadTexture("../assets/white-pawn48.png");
-		textures.KingTexture = LoadTexture("../assets/white-king64.png");
-		textures.KnightTexture = LoadTexture("../assets/white-knight48.png");
-		textures.BishopTexture = LoadTexture("../assets/white-bishop48.png");
-		textures.RookTexture = LoadTexture("../assets/white-rook48.png");
-		textures.QueenTexture = LoadTexture("../assets/white-queen64.png");
-		textures.Ore = LoadTexture("../assets/Orange3Rock.PNG");
-		firstCopper.texture = textures.Ore;
+		//DrawFPS(20,20); // remove if necessary; 
+//		bg.grass = LoadTexture("../assets/grass.png"); 
+		bg.grassWidth = 96;
+		bg.grassHeight = 96;
+		bg.drawPlayable();
+	
 		while (!startupInit){
 			myCursor.init();
 			board.boardSetup(3, firstKing, firstPawn, secondPawn );
 			startupInit = !startupInit;
 		}
-		while(!testInit){
-			firstKnight.init(3,4,"knight", "n001-w");
-			board.addPieceToBoard(firstKnight);
-			firstBishop.init(8,8,"bishop", "b001-w");
-			firstQueen.init(9,9,"Queen", "Q001-w");
-			firstRook.init(11,10,"rook", "r001-w");
-			board.addPieceToBoard(firstQueen);
-			board.addPieceToBoard(firstRook);
-			board.addPieceToBoard(firstBishop);
-			testInit = !testInit;
-		}
+		
+		// Background 
+		// TODO: make it patterned - dirt / grass / dirt / grass (to show white v black square) 
+		testCursor.draw(2,2, PINK);
 
-		bg.grass = LoadTexture("../assets/grass.png"); 
-		bg.grassWidth = 96;
-		bg.grassHeight = 96;
-		bg.drawPlayable();
-//		board.boardSetup(3, firstKing, firstPawn, secondPawn);
-		board.printBoard();
+		// Playable Chars
+		// TODO: transfer draw textures to board class function 
+		// firstPawn.texture = LoadTexture("../assets/white-pawn48.png");
+//		firstPawn.draw(2, 2);
+		firstPawn.type = "pawn";
+		firstPawn.x = 2;
+		firstPawn.y = 2;
+//		firstKnight.texture = LoadTexture("../assets/white-knight48.png");
+//		firstKnight.draw(FRAME_BUFFER + 4*TILE, FRAME_BUFFER + 4*TILE);
+//		firstCopper.texture = LoadTexture("../assets/Orange3Rock.PNG");
+//		firstCopper.draw(FRAME_BUFFER + 5*TILE, FRAME_BUFFER + 5*TILE);
+		myCursor.update(board);
+
+//		showMoves(board.activePieces[0]);
 		myCursor.draw(myCursor.x, myCursor.y, BLUE);
+		drawPieces(board);
 
-		// NOTE: need to check the correct pointer and values are passed through
-		Board* boardPointer = &board;
-		board = *boardPointer;
-
-		myCursor.update(boardPointer);
-		std::cout<< "KEYS: ";
-		for (int i = 0; i< board.keys.size(); i++){
-			std::cout <<  board.keys[i] << ", ";
-		}
-		std::cout << "\n";
-		std::cout << "StartupInit: " << startupInit << " ;  testInit:" << testInit << "\n";
-		std::cout<<  "Knight- X:" << board.activePieces["n001-w"].x << " ;  Y: " << board.activePieces["n001-w"].y << "\n";
-
-		int nx = board.activePieces["n001-w"].x;
-		int ny = board.activePieces["n001-w"].x;
-		board.boardKey[nx][ny] = "0x0x0x";
-		board.activePieces["n001-w"].x= 10;
-		board.activePieces["n001-w"].y= 10;
-		drawPieces(textures, *boardPointer);
-		firstCopper.draw(6,6);
+//		Piece test =  board.activePieces[0];
+//		test.draw(4,4);
+//		std::cout << test.key << "-- > x: "<< test.x << "; y: " << test.y << "\n";
+//		std::cout << test.key << "-- > cx: "<< test.cx << "; cy: " << test.cy << "\n";
+		board.printBoard();
 		board.printActivePieces();
+		std::cout<< "Piece << " << myCursor.piece.key << " ;  X: " << myCursor.piece.x << " ;  Y: "<< myCursor.piece.y << "\n";
 		tt.displayPiece(firstPawn);
 		tt.displayCursor(board, myCursor);
-		EndDrawing();
-
-
-		UnloadTexture(textures.PawnTexture);
-		UnloadTexture(textures.KingTexture);
-		UnloadTexture(textures.QueenTexture);
-		UnloadTexture(textures.RookTexture);
-		UnloadTexture(textures.KnightTexture);
-		UnloadTexture(textures.BishopTexture);
-		UnloadTexture(bg.grass);
-		UnloadTexture(textures.Ore);
-	}
 		
 
+
+
+
+////// *---- TEST if keymap update is working -------////
+//		while (!startupTestPawn){
+//			testPawn.x = 5;
+//			testPawn.y = 5;
+//			testPawn.key = "p999-w";
+//			testPawn.type = "pawn";
+//			board.addPieceToBoard(testPawn);
+//			startupTestPawn = !startupTestPawn;
+//		}
+
+		
+		
+		currentError.printErrors();
+		std::cout<< "CURSOR: X:" << myCursor.x << ", Y:" << myCursor.y << "\n";
+		//myCursor.correction();
+		// NOTE: see if this correction statement above is still neeeded;
+
+        EndDrawing();
+			//
+		// TODO: transfer unloadtexture functions to a class board function;
+		board.activePieces[0].unload();
+		
+	}
+		
+	for (std::string i: board.keys){
+		UnloadTexture(board.activePieces.find(i)->second.texture);
+	}
+		UnloadTexture(firstPawn.texture);
+		UnloadTexture(firstCopper.texture);
+		UnloadTexture(bg.grass);
+		//unloadPieces(board);
+		firstPawn.unload();
 }
+
 
