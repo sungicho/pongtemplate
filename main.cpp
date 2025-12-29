@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <variant>
-#include<unordered_map>
+#include <unordered_map>
 
 // Screen sizing
 #define SCREEN_WIDTH 1280
@@ -17,22 +17,70 @@ using namespace std;
 // 32px pieces 
 const uint16_t BOARDWIDTH = 12;
 const uint16_t BOARDHEIGHT = 12;
+uint16_t turnCounter = 1;
 
 
 class TextureHold{
 public:
-	Texture2D KingTexture;
-	Texture2D PawnTexture;
-	Texture2D KnightTexture;
-	Texture2D BishopTexture;
-	Texture2D QueenTexture;
-	Texture2D RookTexture;
+	Texture2D WhiteKingTexture;
+	Texture2D WhitePawnTexture;
+	Texture2D WhiteKnightTexture;
+	Texture2D WhiteBishopTexture;
+	Texture2D WhiteQueenTexture;
+	Texture2D WhiteRookTexture;
 	Texture2D Ore;
-
+	Texture2D BlackKingTexture;
+	Texture2D BlackPawnTexture;
+	Texture2D BlackKnightTexture;
+	Texture2D BlackBishopTexture;
+	Texture2D BlackQueenTexture;
+	Texture2D BlackRookTexture;
+	Texture2D attacking1;
+	Texture2D attacking2;
+	Texture2D attacking3;
 };
+
+class Animation{
+public:
+	int first, last, cur;
+	float duration_left, speed;
+};
+
+void animation_update(Animation * self ){
+	float dt = GetFrameTime();
+	self -> duration_left -=dt;
+	if (self->duration_left <=0.0){
+		self->duration_left = self->speed;
+		self->cur ++;
+	}
+	if (self->cur > self->last){
+		self->cur = self->first;
+	}
+}
+
+Rectangle buildAnim (Texture2D texture, int x, int y){
+	Rectangle result;
+	result.height = texture.height;
+	result.width = texture.width;
+	result.x = x;
+	result.y= y;
+	return result;
+}
+
+Texture2D* TextAnim3(Texture2D *text1, Texture2D* text2, Texture2D* text3, Animation* anim){
+	Texture2D resultText;
+	if (anim->cur == anim->first) return text1;
+	if (anim->cur == anim->last) return text3;
+	else return text2;
+}
 
 
 class Error{
+};
+
+class Player{
+public:
+	std::string color;
 };
 
 class Ore{
@@ -64,13 +112,16 @@ public:
 	Texture2D texture; 
 	uint16_t x, y; 
 	Ore oreHeld;
+	Player player;
+
 	// NOTE: key = letter showing piece + 4 digit + "-" player letter (w/b)   "p002-w"
 
-	void init(int ix = 0, int iy = 0, std::string itype = "pawn", std::string ikey = "p000-w"){
+	void init(int ix = 0, int iy = 0, std::string itype = "pawn", std::string ikey = "p000-w" , std::string color = "white"){
 		x = ix;
 		y = iy;
 		type = itype;
 		key = ikey;
+		player.color = color;
 	}
 
 	void draw( TextureHold TXH,int ix = 400, int iy = 400, bool elevated = false, bool flying = false){
@@ -78,36 +129,65 @@ public:
 		y = iy;
 		Texture2D texture;
 		
-		if (type == "pawn"){
+		if (type == "pawn" && player.color == "white"){
 			texHeight = 48;
 			texWidth = 48;
-			texture = TXH.PawnTexture;
+			texture = TXH.WhitePawnTexture;
 		}
-		if (type == "Queen") {
+		if (type == "Queen" && player.color == "white") {
 			texHeight = 64;
 			texWidth= 56;
-			texture = TXH.QueenTexture;
+			texture = TXH.WhiteQueenTexture;
 		}
-		if (type == "King") {
+		if (type == "King" && player.color == "white") {
 			texHeight = 64;
 			texWidth= 56;
-			texture = TXH.KingTexture;
+			texture = TXH.WhiteKingTexture;
 		}
-		if (type == "knight") {
+		if (type == "knight" && player.color == "white") {
 			texHeight = 48;
 			texWidth= 48;
-			texture = TXH.KnightTexture;
+			texture = TXH.WhiteKnightTexture;
 		}
-		if (type == "rook") {
+		if (type == "rook" && player.color == "white") {
 			texHeight = 48;
 			texWidth= 48;
-			texture = TXH.RookTexture;
+			texture = TXH.WhiteRookTexture;
 		}	
-		if (type == "bishop") {
+		if (type == "bishop" && player.color == "white") {
 			texHeight = 48;
 			texWidth= 48;
-			texture = TXH.BishopTexture;
+			texture = TXH.WhiteBishopTexture;
 		}
+
+		//Black
+		if (type == "pawn" && player.color == "black") {
+			texHeight = 48;
+			texWidth= 48;
+			texture = TXH.BlackBishopTexture;
+		}
+		if (type == "Queen" && player.color == "black") {
+			texHeight = 64;
+			texWidth= 56;
+			texture = TXH.BlackQueenTexture;
+		}
+		if (type == "King" && player.color == "black") {
+			texHeight = 64;
+			texWidth= 56;
+			texture = TXH.BlackKingTexture;
+		}
+		if (type == "knight" && player.color == "black") {
+			texHeight = 48;
+			texWidth= 48;
+			texture = TXH.BlackKnightTexture;
+		}
+		if (type == "bishop" && player.color == "black") {
+			texHeight = 48;
+			texWidth= 48;
+			texture = TXH.BlackBishopTexture;
+		}
+
+
 //		if (type == "knight") texture =LoadTexture("../assets/white-knight48.png");
 		cx = x * TILE + FRAME_BUFFER - texWidth + TILE;
 		cy = (BOARDHEIGHT - y-1) * TILE + FRAME_BUFFER -texHeight + TILE;
@@ -126,69 +206,6 @@ public:
 
 
 
-	std::vector<std::array<int, 2>> availableMoves(){
-		std::array<int, 2> move = {0,0};
-		std::vector<std::array<int,2>> available;
-		
-		if (type == "King"){
-			available.push_back({1,0});
-			available.push_back({1,1});
-			available.push_back({0,1});
-			available.push_back({-1,0});
-			available.push_back({-1,-1});
-			available.push_back({0,-1});
-			available.push_back({1,-1});
-			available.push_back({-1,1});
-		}
-
-		if (type=="pawn"){
-			available.push_back({1,0});
-			available.push_back({0,1});
-			available.push_back({-1,0});
-			available.push_back({0,-1});
-		}
-
-		if (type=="knight"){
-			available.push_back({2,1});
-			available.push_back({2,-1});
-			available.push_back({1,2});
-			available.push_back({-1,2});
-			available.push_back({-2,1});
-			available.push_back({-2,-1});
-			available.push_back({-1,-2});
-			available.push_back({1,-2});
-		}
-		if (type =="rook"){
-			for (int i = 0; i<=8; i++){
-				available.push_back({i,0});
-				available.push_back({0,i});
-				available.push_back({-i,0});
-				available.push_back({0,-i});
-			}
-		}	
-		if (type =="bishop"){
-			for (int i = 0; i<=8; i++){
-				available.push_back({i,i});
-				available.push_back({-i,i});
-				available.push_back({i,-i});
-				available.push_back({-i,-i});
-			}
-		}	
-		if (type =="Queen"){
-			for (int i = 0; i<=8; i++){
-				available.push_back({i,i});
-				available.push_back({-i,i});
-				available.push_back({i,-i});
-				available.push_back({-i,-i});
-				available.push_back({i,0});
-				available.push_back({0,i});
-				available.push_back({-i,0});
-				available.push_back({0,-i});
-			}
-		}
-	
-		return available;
-	}
 };
 
 
@@ -226,9 +243,9 @@ public:
 	int oreCount = 0;
 
 	void boardSetup(int pieceCount,
-					Piece king, 
-					Piece pawn1,
-					Piece pawn2){
+					Piece* king, 
+					Piece* pawn1,
+					Piece* pawn2){
 
 		
 		for (int i= 0; i< BOARDHEIGHT; i++){
@@ -240,11 +257,11 @@ public:
 			// TODO: change this so that the players are added to the player class
 			// TODO: change this to the add function;
 			
-		king.init(BOARDWIDTH /2, 0, "King", "K001-w");
+		king->init(BOARDWIDTH /2, 0, "King", "K001-w");
 		addPieceToBoard(king);
-		pawn1.init(BOARDWIDTH/2+1, 0, "pawn", "p001-w");
+		pawn1->init(BOARDWIDTH/2+1, 0, "pawn", "p001-w", "white");
 		addPieceToBoard(pawn1);
-		pawn2.init(BOARDWIDTH/2-1, 0, "pawn", "p002-w");
+		pawn2->init(BOARDWIDTH/2-1, 0, "pawn", "p002-w", "white");
 		addPieceToBoard(pawn2);
 	}
 	
@@ -261,11 +278,132 @@ public:
 		}
 	
 		----- */ 
+
+	std::vector<std::array<int, 2>> availableMoves(Piece piece){
+		std::vector<std::array<int,2>> available;
+		
+		// TODO: run addtional if statements to check if occupied
+		if (piece.type == "King"){
+			available.push_back({1,0});
+			available.push_back({1,1});
+			available.push_back({0,1});
+			available.push_back({-1,0});
+			available.push_back({-1,-1});
+			available.push_back({0,-1});
+			available.push_back({1,-1});
+			available.push_back({-1,1});
+		}
+		/// TODO: if pawn is right by ore; 
+		if (piece.type=="pawn"){
+			available.push_back({1,0});
+			available.push_back({0,1});
+			available.push_back({-1,0});
+			available.push_back({0,-1});
+		}
+		if (piece.type =="knight"){
+			available.push_back({2,1});
+			available.push_back({2,-1});
+			available.push_back({1,2});
+			available.push_back({-1,2});
+			available.push_back({-2,1});
+			available.push_back({-2,-1});
+			available.push_back({-1,-2});
+			available.push_back({1,-2});
+		}
+
+		if (piece.type =="rook"){
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x+i][piece.y] == "000000") available.push_back({i,0});
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x][piece.y+i] == "000000") available.push_back({0,i});
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x-i][piece.y] == "000000") available.push_back({-i,0});
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x][piece.y-i] == "000000") available.push_back({0,-i});
+				else break;
+			}
+//			
+		}	
+		if (piece.type =="bishop"){
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x+i][piece.y+i] == "000000") available.push_back({i,i});
+				else break;
+			}	
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x-i][piece.y+i] == "000000") available.push_back({-i, i});
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x+i][piece.y-i] == "000000") available.push_back({i,-i});
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x-i][piece.y-i] == "000000") available.push_back({-i,-i});
+				else break;
+			}
+		}
+
+		if (piece.type =="Queen"){
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x+i][piece.y+i] == "000000") available.push_back({i,i});
+				else break;
+			}	
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x-i][piece.y+i] == "000000") available.push_back({-i, i});
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x+i][piece.y-i] == "000000") available.push_back({i,-i});
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x-i][piece.y-i] == "000000") available.push_back({-i,-i});
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x+i][piece.y] == "000000") available.push_back({i,0});
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x][piece.y+i] == "000000") available.push_back({0,i});
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x-i][piece.y] == "000000") available.push_back({-i,0});
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x][piece.y-i] == "000000") available.push_back({0,-i});
+				else break;
+			}
+			
+		}
+		return available;
+	}
+
+
+	std::vector<std::array<int, 2>> availableAttack(Piece piece){
+		std::vector<std::array<int, 2>> available;
+		
+		if (piece.type == "Bishop"){
+			for (int i = 1; i<=8; i++){
+				if (activePieces.find(boardKey[piece.x+i][piece.y])->second.player.color
+					!= piece.player.color) available.push_back({0,-i});
+			}
+		}
+		return available;
+	}
+
 	void showMoves(int x, int y){
 		std::string key = boardKey[x][y];
 		Piece activePiece = activePieces.find(key)->second;
-		// TODO: need to stop showing if there is a piece there. 
-		std::vector<std::array<int,2>> available = activePiece.availableMoves();
+		std::vector<std::array<int,2>> available = availableMoves(activePiece);
 		for (std::array<int,2> i: available){
 			if (boardKey[x+i[0]][y+i[1]] == "000000"){
 				drawCursorBoxes(activePiece.x, activePiece.y, i, ORANGE);
@@ -276,10 +414,9 @@ public:
 		}
 	}
 	
-	// TODO: need to validate enemy position
 	bool isValidMove(string key, int tx, int ty){
 		Piece activePiece = activePieces.find(key)->second;
-		std::vector<std::array<int,2>> available = activePiece.availableMoves();
+		std::vector<std::array<int,2>> available = availableMoves(activePiece);
 		for (std::array<int,2> i: available){
 			if (activePiece.x+i[0]== tx && activePiece.y+i[1]== ty && boardKey[tx][ty] == "000000"){
 				return true;
@@ -288,17 +425,13 @@ public:
 		return false;
 	}
 
-	void updateBoardKey(Piece piece, int oldx, int oldy){
-		activePieces[piece.key] = piece;
-		boardKey[oldx][oldy] = "000000";
-		boardKey[piece.x][piece.y] = piece.key;
+	void addPieceToBoard(Piece* ipiece){
 
-	}
-
-	void addPieceToBoard(Piece ipiece){
-		boardKey[ipiece.x][ipiece.y] = ipiece.key;
-		activePieces.insert({ipiece.key,ipiece});
-		keys.push_back(ipiece.key);
+		std::string key_str = ipiece -> key;
+		boardKey[ipiece->x][ipiece->y] = ipiece->key;
+		//*activePieces[ipiece->key] = &ipiece;
+		activePieces.emplace(key_str, *ipiece);
+		keys.push_back(ipiece->key);
 		// TODO: add class function here based on board. 
 	}
 
@@ -371,7 +504,6 @@ public:
 	}
 
 	// TODO: center up cursor board
-	// TODO: buff up cursor square to make it more visible
 	void draw(int ix= 0, int iy =0, Color color = PINK ){
 		x = ix;
 		y = iy;
@@ -390,7 +522,7 @@ public:
 			if (blinkOn){	
 				DrawRectangleLinesEx((Rectangle){f_cx, f_cy, f_x, f_x}, 5.0f, color);
 			}
-			// TODO: make the cursor blink for attraction;
+			// TODO: make the cursor blink for less than shown (more on than off)
 			std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 			double nowDouble = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 			double timeDelta = nowDouble - lastBlink;
@@ -404,7 +536,6 @@ public:
 	}
 
 	void update(Board *board){
-		// TODO: bounce off last key press timer;
 		std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 		double nowDouble = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 		double cursorDebounce = 80;
@@ -426,6 +557,7 @@ public:
 			y++;
 			lastCursorPress = nowDouble;
 		}
+		
 		key = board->boardKey[x][y];
 
 		now = std::chrono::system_clock::now();
@@ -442,14 +574,6 @@ public:
 			buffPiece = board->activePieces[key];
 			selectedKey = buffPiece.key;
 		}
-		if (pieceSelected) tf = "TRUE";
-		else tf = "FALSE";
-		std::cout<< "SELECTION: "<<tf << "\n";
-
-		std::cout<< "Selected KEY: " << selectedKey<< ";  S-X: "<< buffPiece.x << ";  Y: " << buffPiece.y <<"\n";
-		std::cout<< "SelectedX: " << selectedX<< " ; SELECTED Y:  "<< selectedY << "\n";
-		std::cout<< "X: " << x << " ;  Y:" << y << "\n";
-		std::cout<< "Delta: " << delta <<" Now: " << nowDouble << " ;  lastKeyPress:" << lastKeyPress << "\n";
 		now = std::chrono::system_clock::now();
 		nowDouble = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 		debounce = 500;
@@ -465,6 +589,14 @@ public:
 			std::string key = selectedKey;
 			const char* c_key = key.c_str();
 			DrawText(c_key, 250, 10, 30, WHITE);		
+			turnCounter ++;
+		}
+
+		if ((IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_ESCAPE)) && delta > debounce && pieceSelected && !board->isValidMove(selectedKey,x ,y)){
+			pieceSelected = !pieceSelected;
+			lastKeyPress = nowDouble;
+			x = selectedX;
+			y = selectedY;
 		}
 
 		if (pieceSelected){
@@ -474,7 +606,11 @@ public:
 			DrawText(c_key, 150, 10, 30, WHITE);
 			board->showMoves(selectedX, selectedY);
 		}
-		
+
+		std::string tc_string = std::to_string(turnCounter); 
+		const char* tC_char = tc_string.c_str();
+		DrawText(tC_char, 100, 10, 30, WHITE);		
+
 	// ----- required if having cursor errors ------///
 		//if (x>BOARDWIDTH-1) x = BOARDWIDTH-1;
 		//if (x<=0) x = 0;
@@ -558,7 +694,7 @@ public:
 
 	}
 
-	void displayPiece(Piece piece){
+	void displayPiece(Board board, Piece piece){
 		// TODO: need to fix this for 2 digits or bigger boards;
 		string s_pos_x = std::to_string(pos_x);
 		const char* c_pos_x = s_pos_x.c_str();
@@ -573,6 +709,9 @@ public:
 		const char* c_y_str = y_str.c_str();
 		DrawText(c_y_str, x+130, y+100, 20, WHITE);
 		DrawText(c_pos_y, x+150, y+100, 20, WHITE);
+		std::string piece_player = piece.player.color;
+		const char* c_piece_player = piece_player.c_str();
+		DrawText(c_piece_player, x+220, y+100, 20, WHITE);
 	}
 };
 
@@ -611,9 +750,9 @@ public:
 	}
 };
 
-void drawPieces(TextureHold txh, Board board){
-	for (int i=0; i<board.keys.size(); i++){ 
-		Piece piece = board.activePieces[board.keys[i]];
+void drawPieces(TextureHold txh, Board* board){
+	for (int i=0; i<board->keys.size(); i++){ 
+		Piece piece = board->activePieces[board->keys[i]];
 		//Piece piece = board.activePieces.find(board.keys[i])->second;
 		piece.draw(txh, piece.x, piece.y);
 		//UnloadTexture(piece.texture);
@@ -627,6 +766,8 @@ int main () {
 	bool startupTestPawn = false;
 	TextureHold textures;
 
+	Player white;
+	Player black;
 	TileCursor myCursor;
 	Background bg;
 	Board board;
@@ -640,6 +781,14 @@ int main () {
 	Piece firstQueen;
 	Piece firstKnight;
 	Piece firstBishop;
+	Piece blackPawn;
+	Piece blackPawn2;
+	Piece blackKing;
+	Piece blackRoo;
+	Piece blackQueen;
+	Piece blackKnight;
+	Piece blackBishop;
+
 	Ore firstCopper;
 	Tooltip tt;
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Chess");
@@ -647,34 +796,68 @@ int main () {
 
 	bool testInit = false;
 
+	Animation attackAnim = (Animation){
+		.first = 1,
+		.last = 3, 
+		.cur = 1,
+		.duration_left = .5, 
+		.speed = .3
+	};
+
     while (WindowShouldClose() == false){
+
+		SetExitKey(KEY_NULL);
 		BeginDrawing();
 		ClearBackground(BLACK);
 		DrawFPS(20,20); // remove if necessary; 
-		textures.PawnTexture = LoadTexture("../assets/white-pawn48.png");
-		textures.KingTexture = LoadTexture("../assets/white-king64.png");
-		textures.KnightTexture = LoadTexture("../assets/white-knight48.png");
-		textures.BishopTexture = LoadTexture("../assets/white-bishop48.png");
-		textures.RookTexture = LoadTexture("../assets/white-rook48.png");
-		textures.QueenTexture = LoadTexture("../assets/white-queen64.png");
+		//
+		// TODO: make a fucntion with allof the textures and pointer declarations
+		// TODO: need to make another function to create all of the classes
+		textures.WhitePawnTexture = LoadTexture("../assets/white-pawn48.png");
+		textures.WhiteKingTexture = LoadTexture("../assets/white-king64.png");
+		textures.WhiteKnightTexture = LoadTexture("../assets/white-knight48.png");
+		textures.WhiteBishopTexture = LoadTexture("../assets/white-bishop48.png");
+		textures.WhiteRookTexture = LoadTexture("../assets/white-rook48.png");
+		textures.WhiteQueenTexture = LoadTexture("../assets/white-queen64.png");
 		textures.Ore = LoadTexture("../assets/Orange3Rock.PNG");
+		textures.BlackPawnTexture = LoadTexture("../assets/black-pawn48.png");
+		textures.BlackKingTexture = LoadTexture("../assets/black-king64.png");
+		textures.BlackKnightTexture = LoadTexture("../assets/black-knight48.png");
+		textures.BlackBishopTexture = LoadTexture("../assets/black-bishop48.png");
+		textures.BlackRookTexture = LoadTexture("../assets/black-rook48.png");
+		textures.BlackQueenTexture = LoadTexture("../assets/black-queen48.png");
+		textures.attacking1 = LoadTexture("../assets/FX/FX036_01.png");
+		textures.attacking2 = LoadTexture("../assets/FX/FX036_02.png");
+		textures.attacking3 = LoadTexture("../assets/FX/FX036_03.png");
+		Rectangle attRect = buildAnim(textures.attacking1, 10, 10);
+
 		firstCopper.texture = textures.Ore;
+
+
+
 		while (!startupInit){
 			myCursor.init();
-			board.boardSetup(3, firstKing, firstPawn, secondPawn );
+			board.boardSetup(3, &firstKing, &firstPawn, &secondPawn );
 			startupInit = !startupInit;
 		}
 		while(!testInit){
-			firstKnight.init(3,4,"knight", "n001-w");
-			board.addPieceToBoard(firstKnight);
+			firstKnight.init(10,4,"knight", "n001-w", "white");
+			board.addPieceToBoard(&firstKnight);
 			firstBishop.init(8,8,"bishop", "b001-w");
 			firstQueen.init(9,9,"Queen", "Q001-w");
 			firstRook.init(11,10,"rook", "r001-w");
-			board.addPieceToBoard(firstQueen);
-			board.addPieceToBoard(firstRook);
-			board.addPieceToBoard(firstBishop);
+			board.addPieceToBoard(&firstQueen);
+			board.addPieceToBoard(&firstRook);
+			board.addPieceToBoard(&firstBishop);
 			testInit = !testInit;
+			blackKnight.init(2,1,"knight", "n001-b", "black");
+			blackPawn.init(3,3, "pawn", "p001-b", "black");
+			board.addPieceToBoard(&blackKnight);
+			board.addPieceToBoard(&blackPawn);
+			blackKing.init(3,4, "King", "K001-b", "black");
+			board.addPieceToBoard(&blackKing);
 		}
+		
 
 		bg.grass = LoadTexture("../assets/grass.png"); 
 		bg.grassWidth = 96;
@@ -685,17 +868,13 @@ int main () {
 		myCursor.draw(myCursor.x, myCursor.y, BLUE);
 
 		// NOTE: need to check the correct pointer and values are passed through
-		Board* boardPointer = &board;
-		board = *boardPointer;
 
-		myCursor.update(boardPointer);
+		myCursor.update(&board);
 		std::cout<< "KEYS: ";
 		for (int i = 0; i< board.keys.size(); i++){
 			std::cout <<  board.keys[i] << ", ";
 		}
 		std::cout << "\n";
-		std::cout << "StartupInit: " << startupInit << " ;  testInit:" << testInit << "\n";
-		std::cout<<  "Knight- X:" << board.activePieces["n001-w"].x << " ;  Y: " << board.activePieces["n001-w"].y << "\n";
 
 //		int nx = board.activePieces["n001-w"].x;
 //		int ny = board.activePieces["n001-w"].y;
@@ -703,21 +882,38 @@ int main () {
 //		boardPointer->activePieces["n001-w"].x= 10;
 //		boardPointer->activePieces["n001-w"].y= 10;
 //		boardPointer->boardKey[10][10] = "n001-w";
-		drawPieces(textures, *boardPointer);
+		drawPieces(textures, &board);
 		firstCopper.draw(6,6);
 		board.printActivePieces();
-		tt.displayPiece(firstPawn);
+
+		tt.displayPiece(board, firstPawn);
 		tt.displayCursor(board, myCursor);
+		std::cout<< "Player cursor: " << firstPawn.player.color << "\n"; 
+		std::cout<< "COLOR: " << board.activePieces["p001-b"].player.color<< "\n";
+
+		Texture2D *buffText = TextAnim3(&textures.attacking1, &textures.attacking2, &textures.attacking3, &attackAnim);
+		animation_update(&attackAnim);
+		DrawTexturePro(*buffText, attRect, attRect, {0,0}, 0, WHITE);
+
+
+
 		EndDrawing();
 
 
-		UnloadTexture(textures.PawnTexture);
-		UnloadTexture(textures.KingTexture);
-		UnloadTexture(textures.QueenTexture);
-		UnloadTexture(textures.RookTexture);
-		UnloadTexture(textures.KnightTexture);
-		UnloadTexture(textures.BishopTexture);
+		UnloadTexture(textures.WhitePawnTexture);
+		UnloadTexture(textures.WhiteKingTexture);
+		UnloadTexture(textures.WhiteQueenTexture);
+		UnloadTexture(textures.WhiteRookTexture);
+		UnloadTexture(textures.WhiteKnightTexture);
+		UnloadTexture(textures.WhiteBishopTexture);
 		UnloadTexture(bg.grass);
+		UnloadTexture(textures.BlackPawnTexture);
+		UnloadTexture(textures.BlackKingTexture);
+		UnloadTexture(textures.BlackQueenTexture);
+		UnloadTexture(textures.BlackRookTexture);
+		UnloadTexture(textures.BlackKnightTexture);
+		UnloadTexture(textures.BlackBishopTexture);
+
 		UnloadTexture(textures.Ore);
 	}
 		
