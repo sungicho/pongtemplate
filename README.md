@@ -24,8 +24,14 @@ OBJECTIVE: Capture Enemy King
 
 ## Bugg List
 - [x] selector squares cant overcast and delte units
-- [ ] if you selecte a non-eligible square, needs to come off selection
-- [ ] queens, rooks, bishops cant skip pieces
+- [X] if you selecte a non-eligible square, needs to come off selection
+- [X] queens, rooks, bishops cant skip pieces
+- [ ] black pawn doesnt show graphic
+- [ ] pieces once taken their position doesnt move to the new location;
+- [ ] bishop on start (8,8) kicks error 
+        - might be a first select on a black piece 
+        - or might be an issue wiht the bishop piece itself (check moveAvailble vs attackAvailable cross over)
+
 
 
 ## PROJECT ROADMAP:
@@ -37,18 +43,26 @@ OBJECTIVE: Capture Enemy King
 - [x] selector square shows possible moves (red for attack squares)
     - build this only for selected piece
 - [x] selector square mvoes pieces to possible
-- [ ] create an info box showing node information (or piece info)
-- [ ] create an A>Z and a ## 1-20 grid pattern (like standard chess grid)
+- [X] create an info box showing piece info
+- [ ] create an info box showing node information 
+- [x] create an A>Z and a ## 1-20 grid pattern (like standard chess grid)
 - [x] create a turn counter to count 
 - [ ] create a refactor and make a function to create all of the variables 
     - var: int for number of objects created, type, color/team, 
+    - group all textures (change to typedef to separate the different types)
+- [ ] create a "next turn" button
+- [ ] show "multi turn pathing" 
+- [ ] show settings JSON 
+- [ ] 
 
 ### Game Mechanics 
 - [x] create matrix for board
 - [x] add ores to board
 - [x] add movement to pawn
 - [x] add movement to knight
+- [ ] create an ability for pawns to hold items. 
 - [ ] add pawn upgrade to knight
+    - [ ] add a 1turn delay to upgrade
 - [ ] add resources randomly in field
 - [ ] create timer that shows queen <> king pair
 - [ ] create pawn spawn
@@ -56,6 +70,8 @@ OBJECTIVE: Capture Enemy King
 - [ ] create a graphic that shows "mining" by pawns;
 - [ ] add a way for pieces to attack each other;
 - [ ] add an animation for attacking;
+- [ ] add animation for mining
+- [ ] add maximum move counter (increase)
 
 
 #### Opponent / AI Mechanics
@@ -75,11 +91,19 @@ OBJECTIVE: Capture Enemy King
 - Rush to find ore with the Queen 
 - Avoid conflict
 - Spawn pawns
-- Try to find stone
+- upgrade pawns
 
 #### Mid Game
 - Try to position against enemy
 - send pawns for ore and stone
+- force push combination of pawns and other pieces
+- try to find stone
+
+
+#### Late Game
+- Start trading pieces
+- 
+
 
 ## Game Modes:
 - Timed vs Turn based match
@@ -91,9 +115,12 @@ OBJECTIVE: Capture Enemy King
      - create timed turns;
      - scenario specific turns
         - against only bishops
-        - agasinst only knights
-        - agsint town halls
+        - against only knights
+        - against queen
     - conquer full kingdoms
+    - force choose between Bishops and Knights in campaign 
+    - upgrade knights (include forward move)
+    - upgrade bishops (more vision)
 
 
 ------- 
@@ -101,3 +128,12 @@ OBJECTIVE: Capture Enemy King
 ## FUTURE ROADMAP
 - [ ] create "jumpable" or move cost squares - this may be removable (adds too much complexity - shelved for v2)
 - [ ] create a "multijump" queue. i.e target a pawn 8 squares away to move, auto queue its next move (and show the player);
+- [ ] multiple different civilizations
+    - English Chess - standard
+    - Jangi - Chinese Chess
+    - Chaturaji - https://en.wikipedia.org/wiki/Chaturaji
+
+
+
+## GOOD IDEA FAIRY
+ - [ ] create a stationary tower that can attack 

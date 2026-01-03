@@ -1,13 +1,15 @@
-# Minimum required CMake version
-cmake_minimum_required(VERSION 3.10)
+# Minimum required CMake version cmake_minimum_required(VERSION 3.50)
+cmake_minimum_required(VERSION 4.0)
+
 
 # Set the project name (will be the executable name) and language
 project(ChessProject CXX)
 
+include(FetchContent)
 # create export compile for lsp
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Set the C++ standard to 17 (recommended for raylib-cpp)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Configure the build directory for the executable (e.g., build/bin/Raylib_App)
@@ -21,7 +23,27 @@ file(GLOB_RECURSE PROJECT_SOURCES
     "main.cpp"
 	"assets/*"
 )
+# === json ====
+# find_package(nholmann_json CONFIG REQUIRED)
+find_package(MPI REQUIRED)
 
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.12.0
+)
+
+
+
+# Doctest required by nlohmann json
+FetchContent_Declare(
+  doctest
+  GIT_REPOSITORY https://github.com/doctest/doctest.git
+  GIT_TAG v2.4.12
+)
+
+
+FetchContent_MakeAvailable(nlohmann_json doctest)
 # --- Raylib Dependency Setup ---
 
 # Attempt to find raylib using a configuration file (modern approach)
@@ -34,7 +56,7 @@ if(NOT TARGET raylib)
     find_path(RAYLIB_INCLUDE_DIR raylib.h)
     find_library(RAYLIB_LIB raylib)
 
-    if(RAYLIB_INCLUDE_DIR AND RAYLIB_LIB)
+	if(RAYLIB_INCLUDE_DIR AND RAYLIB_LIB)
         message(STATUS "Found raylib manually: ${RAYLIB_INCLUDE_DIR}")
         
         # Define a reusable Raylib interface target with required link flags
@@ -60,8 +82,22 @@ if(NOT TARGET raylib)
     endif()
 endif()
 
-# --- Create Executable and Link ---
+##add_subdirectory(thirdparty)
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+#add_executable(${PROJECT_NAME} doctest.cpp)
 
+target_include_directories(${PROJECT_NAME} PRIVATE 
+    ${json_SOURCE_DIR}/tests/thirdparty/doctest
+)
+
+enable_testing()
+
+#add_executable(my_tests tests.cpp)
 # Link the executable to the raylib target
-target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+		raylib 
+		#doctest
+		nlohmann_json::nlohmann_json
+		doctest::doctest
+		MPI::MPI_CXX
+)

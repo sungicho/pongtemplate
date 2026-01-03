@@ -1,3 +1,4 @@
+#include "nlohmann/json_fwd.hpp"
 #include <iostream>
 #include <raylib.h>
 #include <raymath.h>
@@ -5,6 +6,9 @@
 #include <vector>
 #include <variant>
 #include <unordered_map>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
 
 // Screen sizing
 #define SCREEN_WIDTH 1280
@@ -12,13 +16,13 @@
 #define TILE 48
 #define FRAME_BUFFER 45
 
-using namespace std;
+//namespace std;
 // Make this stationary board first >> then make it move so you can scan the field 
 // 32px pieces 
-const uint16_t BOARDWIDTH = 12;
+const uint16_t BOARDWIDTH = 16;
 const uint16_t BOARDHEIGHT = 12;
 uint16_t turnCounter = 1;
-
+const std::string empty = "000000";
 
 class TextureHold{
 public:
@@ -91,7 +95,6 @@ public:
 	int texWidth = 48;
 	int texHeight = 48;
 
-
 	void draw(uint16_t x = 0, uint16_t y = 0){
 		int cx = x * TILE + FRAME_BUFFER - texWidth + TILE;
 		int cy = (BOARDHEIGHT - y-1) * TILE + FRAME_BUFFER -texHeight + TILE;
@@ -113,6 +116,7 @@ public:
 	uint16_t x, y; 
 	Ore oreHeld;
 	Player player;
+	Player capturedPlayer;
 
 	// NOTE: key = letter showing piece + 4 digit + "-" player letter (w/b)   "p002-w"
 
@@ -192,8 +196,8 @@ public:
 		cx = x * TILE + FRAME_BUFFER - texWidth + TILE;
 		cy = (BOARDHEIGHT - y-1) * TILE + FRAME_BUFFER -texHeight + TILE;
 
-	// TODO: convert to CX XY
-		DrawTexture(texture, cx, cy, WHITE);
+		// FIX: change back from ORANGE
+		DrawTexture(texture, cx, cy, ORANGE);
 //		//firstPawn.texture = LoadTexture("../assets/white-pawn48.png");
 //		firstPawn.draw(FRAME_BUFFER + TILE,FRAME_BUFFER + TILE);
 //		firstKing.texture = LoadTexture("../assets/white-king64.png");
@@ -235,6 +239,7 @@ class Board{
 public: 
 	std::array<std::array<std::string, BOARDHEIGHT>, BOARDWIDTH> boardKey = {{}}; 
 	std::unordered_map<std::string, Piece> activePieces;
+	std::unordered_map<std::string, Piece> capturedPieces;
 	std::vector<std::string> keys;
 	Piece fluffPiece;
 
@@ -250,7 +255,7 @@ public:
 		
 		for (int i= 0; i< BOARDHEIGHT; i++){
 			for (int j = 0; j<BOARDWIDTH; j++){
-				boardKey[j][i] = "000000";
+				boardKey[j][i] = empty;
 			}
 		}
 		// create king in middle and two pawns next to him; 
@@ -313,73 +318,73 @@ public:
 
 		if (piece.type =="rook"){
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x+i][piece.y] == "000000") available.push_back({i,0});
+				if (boardKey[piece.x+i][piece.y] == empty) available.push_back({i,0});
 				else break;
 			}
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x][piece.y+i] == "000000") available.push_back({0,i});
+				if (boardKey[piece.x][piece.y+i] == empty) available.push_back({0,i});
 				else break;
 			}
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x-i][piece.y] == "000000") available.push_back({-i,0});
+				if (boardKey[piece.x-i][piece.y] == empty) available.push_back({-i,0});
 				else break;
 			}
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x][piece.y-i] == "000000") available.push_back({0,-i});
+				if (boardKey[piece.x][piece.y-i] == empty) available.push_back({0,-i});
 				else break;
 			}
 //			
 		}	
 		if (piece.type =="bishop"){
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x+i][piece.y+i] == "000000") available.push_back({i,i});
+				if (boardKey[piece.x+i][piece.y+i] == empty) available.push_back({i,i});
 				else break;
 			}	
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x-i][piece.y+i] == "000000") available.push_back({-i, i});
+				if (boardKey[piece.x-i][piece.y+i] == empty) available.push_back({-i, i});
 				else break;
 			}
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x+i][piece.y-i] == "000000") available.push_back({i,-i});
+				if (boardKey[piece.x+i][piece.y-i] == empty) available.push_back({i,-i});
 				else break;
 			}
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x-i][piece.y-i] == "000000") available.push_back({-i,-i});
+				if (boardKey[piece.x-i][piece.y-i] == empty) available.push_back({-i,-i});
 				else break;
 			}
 		}
 
 		if (piece.type =="Queen"){
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x+i][piece.y+i] == "000000") available.push_back({i,i});
+				if (boardKey[piece.x+i][piece.y+i] == empty) available.push_back({i,i});
 				else break;
 			}	
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x-i][piece.y+i] == "000000") available.push_back({-i, i});
+				if (boardKey[piece.x-i][piece.y+i] == empty) available.push_back({-i, i});
 				else break;
 			}
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x+i][piece.y-i] == "000000") available.push_back({i,-i});
+				if (boardKey[piece.x+i][piece.y-i] == empty) available.push_back({i,-i});
 				else break;
 			}
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x-i][piece.y-i] == "000000") available.push_back({-i,-i});
+				if (boardKey[piece.x-i][piece.y-i] == empty) available.push_back({-i,-i});
 				else break;
 			}
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x+i][piece.y] == "000000") available.push_back({i,0});
+				if (boardKey[piece.x+i][piece.y] == empty) available.push_back({i,0});
 				else break;
 			}
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x][piece.y+i] == "000000") available.push_back({0,i});
+				if (boardKey[piece.x][piece.y+i] == empty) available.push_back({0,i});
 				else break;
 			}
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x-i][piece.y] == "000000") available.push_back({-i,0});
+				if (boardKey[piece.x-i][piece.y] == empty) available.push_back({-i,0});
 				else break;
 			}
 			for (int i = 1; i<=8; i++){
-				if (boardKey[piece.x][piece.y-i] == "000000") available.push_back({0,-i});
+				if (boardKey[piece.x][piece.y-i] == empty) available.push_back({0,-i});
 				else break;
 			}
 			
@@ -387,19 +392,172 @@ public:
 		return available;
 	}
 
-
 	std::vector<std::array<int, 2>> availableAttack(Piece piece){
-		std::vector<std::array<int, 2>> available;
+		std::vector<std::array<int,2>> available;
 		
-		if (piece.type == "Bishop"){
+		// TODO: run addtional if statements to check if occupied
+		if (piece.type == "King"){
+			if (piece.x+1< BOARDWIDTH) available.push_back({1,0});
+			if (piece.x+1< BOARDWIDTH && piece.y+1 < BOARDHEIGHT) available.push_back({1,1});
+			if (piece.y+1 < BOARDHEIGHT) available.push_back({0,1});
+			if (piece.x-1>= 0 ) available.push_back({-1,0});
+			if (piece.x-1>= 0 && piece.y-1 >=0) available.push_back({-1,-1});
+			if (piece.y-1 >=0) available.push_back({0,-1});
+			if (piece.x+1< BOARDWIDTH && piece.y-1>= 0) available.push_back({1,-1});
+			if (piece.x-1>= 0 && piece.y+1 < BOARDHEIGHT) available.push_back({-1,1});
+					}
+		/// TODO: if pawn is right by ore; 
+		if (piece.type=="pawn"){
+			if (piece.x+1< BOARDWIDTH && piece.y+1 < BOARDHEIGHT) available.push_back({1,1});
+			if (piece.x-1>= 0 && piece.y+1 < BOARDHEIGHT) available.push_back({-1,1});
+			if (piece.x+1< BOARDWIDTH && piece.y-1>= 0) available.push_back({1,-1});
+			if (piece.x-1>= 0 && piece.y-1 >=0) available.push_back({-1,-1});
+		}
+		if (piece.type =="knight"){
+			if (piece.x+2< BOARDWIDTH && piece.y+1 < BOARDHEIGHT) available.push_back({2,1});
+			if (piece.x+2< BOARDWIDTH && piece.y-1>= 0) available.push_back({2,-1});
+			if (piece.x+1< BOARDWIDTH && piece.y+2 < BOARDHEIGHT) available.push_back({1,2});
+			if (piece.x-1>= 0 && piece.y+2 < BOARDHEIGHT) available.push_back({-1,2});
+			if (piece.x-2>= 0 && piece.y+1 < BOARDHEIGHT) available.push_back({-2,1});
+			if (piece.x-2>= 0 && piece.y-1 >=0) available.push_back({-2,-1});
+			if (piece.x-1>= 0 && piece.y-2 >=0) available.push_back({-1,-2});
+			if (piece.x+1< BOARDWIDTH && piece.y-2 >=0) available.push_back({1,-2});
+		}
+
+		if (piece.type =="rook"){
 			for (int i = 1; i<=8; i++){
-				if (activePieces.find(boardKey[piece.x+i][piece.y])->second.player.color
-					!= piece.player.color) available.push_back({0,-i});
+				if (boardKey[piece.x+i][piece.y] == empty) available.push_back({i,0});
+				else if (piece.x +i < BOARDWIDTH){
+					available.push_back({i,0});
+					break;
+				}
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x-i][piece.y] == empty) available.push_back({-i,0});
+				else if (piece.x -i >= 0){
+					available.push_back({-i,0});
+					break;
+				}
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x][piece.y+i] == empty) available.push_back({0,i});
+				else if (piece.y +i < BOARDHEIGHT){
+					available.push_back({0,i});
+					break;
+				}
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x][piece.y-i] == empty) available.push_back({0,-i});
+				else if (piece.y -i >= 0){
+					available.push_back({0,-i});
+					break;
+				}
+				else break;
+			}
+		}
+
+		if (piece.type =="bishop"){
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x+i][piece.y+i] == empty) available.push_back({i,i});
+				else if (piece.x +i < BOARDWIDTH && piece.y+i < BOARDHEIGHT){
+					available.push_back({i,i});
+					break;
+				}	
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x-i][piece.y+i] == empty) available.push_back({i,-i});
+				else if (piece.x +i < BOARDWIDTH && piece.y-i >=0){
+					available.push_back({i,-i});
+					break;
+				}
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x-i][piece.y-i] == empty) available.push_back({-i,-i});
+				else if (piece.x -i >= 0 && piece.y-i >= 0){
+					available.push_back({-i,-i});
+					break;
+				}
+				else break;
+			}
+		}
+
+		if (piece.type =="Queen"){
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x+i][piece.y] == empty) available.push_back({i,0});
+				else if (piece.x +i < BOARDWIDTH){
+					available.push_back({i,0});
+					break;
+				}
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x-i][piece.y] == "000000") available.push_back({-i,0});
+				else if (piece.x -i >= 0){
+					available.push_back({-i,0});
+					break;
+				}
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x][piece.y+i] == "000000") available.push_back({0,i});
+				else if (piece.y +i < BOARDHEIGHT){
+					available.push_back({0,i});
+					break;
+				}
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x][piece.y-i] == "000000") available.push_back({0,-i});
+				else if (piece.y -i >= 0){
+					available.push_back({0,-i});
+					break;
+				}
+				else break;
+			}
+
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x+i][piece.y+i] == "000000") available.push_back({i,i});
+				else if (piece.x +i < BOARDWIDTH && piece.y+i < BOARDHEIGHT){
+					available.push_back({i,i});
+					break;
+				}	
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x-i][piece.y+i] == "000000") available.push_back({-i, i});
+
+				else if (piece.x -i >=0 && piece.y+i < BOARDHEIGHT){
+					available.push_back({-i,i});
+					break;
+				}
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x+i][piece.y-i] == "000000") available.push_back({i,-i});
+				else if (piece.x +i < BOARDWIDTH && piece.y-i >=0){
+					available.push_back({i,-i});
+					break;
+				}
+				else break;
+			}
+			for (int i = 1; i<=8; i++){
+				if (boardKey[piece.x-i][piece.y-i] == "000000") available.push_back({-i,-i});
+				else if (piece.x -i >= 0 && piece.y-i >= 0){
+					available.push_back({-i,-i});
+					break;
+				}
+				else break;
 			}
 		}
 		return available;
 	}
 
+// NOTE: needs to get refactored so validMove and validAttack aren't repeating the same lines of code. 
 	void showMoves(int x, int y){
 		std::string key = boardKey[x][y];
 		Piece activePiece = activePieces.find(key)->second;
@@ -408,13 +566,20 @@ public:
 			if (boardKey[x+i[0]][y+i[1]] == "000000"){
 				drawCursorBoxes(activePiece.x, activePiece.y, i, ORANGE);
 			}
+		}
+		std::vector<std::array<int,2>> availAttack = availableAttack(activePiece);
+		std:: string findkey;
+		for (std::array<int,2> i: availAttack){
 			if (boardKey[x+i[0]][y+i[1]] != "000000"){
-				drawCursorBoxes(activePiece.x, activePiece.y, i, RED);
+				findkey =activePieces.find(boardKey[x+i[0]][y+i[1]])->second.player.color;
+				if (activePieces.find(boardKey[x+i[0]][y+i[1]])->second.player.color !=activePiece.player.color){
+					drawCursorBoxes(activePiece.x, activePiece.y, i, PINK);
+				}
 			}
 		}
 	}
 	
-	bool isValidMove(string key, int tx, int ty){
+	bool isValidMove(std::string key, int tx, int ty){
 		Piece activePiece = activePieces.find(key)->second;
 		std::vector<std::array<int,2>> available = availableMoves(activePiece);
 		for (std::array<int,2> i: available){
@@ -424,6 +589,32 @@ public:
 		}
 		return false;
 	}
+
+	bool isValidAttack(Piece selectedPiece, Piece targetPiece, int tx, int ty){
+		std::vector<std::array<int,2>> availAttack = availableAttack(selectedPiece);
+		int spx = selectedPiece.x;
+		int spy = selectedPiece.y;
+		for (std::array<int,2> i: availAttack){
+			if (tx == spx+i[0] && ty==spy+i[1] && selectedPiece.player.color!= targetPiece.player.color){
+				const char* c_key = "VALID ATTACK";
+				DrawText(c_key, 500, 10, 30, WHITE);
+				return true;
+			}
+	}
+	return false;
+	}
+
+	void attack(Piece selectedPiece, Piece targetPiece, int tx, int ty, int sx, int sy){
+		boardKey[tx][ty] = selectedPiece.key;
+		boardKey[sx][sy] = empty;
+		boardKey[targetPiece.x][targetPiece.y] = selectedPiece.key;
+		selectedPiece.x = tx;
+		selectedPiece.y = ty;
+		std::erase(keys, targetPiece.key);
+////		boardKey[selectedPiece.x][selectedPiece.y] = "000000";
+		capturedPieces.emplace(targetPiece.key, targetPiece);
+		activePieces.erase(targetPiece.key);
+}
 
 	void addPieceToBoard(Piece* ipiece){
 
@@ -435,7 +626,7 @@ public:
 		// TODO: add class function here based on board. 
 	}
 
-	void printActivePieces(){
+	void printActiveCapturedPieces(){
 		
 		std::cout << "Number of active pieces: " << activePieces.size() << " ; ---> ";
 		std::vector<std::string> keyList;
@@ -446,20 +637,30 @@ public:
 			std::cout << keyList[i] << ", ";
 		}
 		std::cout << "\n";
-	}
+		std::cout << "Keys size: " << keys.size() << "\n";
+		std::cout << "Number of captured pieces: " << capturedPieces.size() << " ; ---> ";
+		std::vector<std::string> capturedList;
+		for (auto& key: capturedPieces){
+			capturedList.push_back(key.first);
+		}
+		for (int i=0; i<capturedList.size(); i++){ 
+			std::cout << capturedList[i] << ", ";
+		}
+		std::cout << "\n";}
 	
 
 	/// print reverse so that array format x, y works and board is perspective from White;
 		/// NOTE: this numbering system will have to be different than the actual numbering system displayed in game; starts at 1 not at zero like arrays do. 
 	void printBoard(){
-			std::cout<< "Board: " << "\n";
-			for (int i= BOARDHEIGHT-1; i>=0; i--){
-				std::cout << i << ": "; 
-				for (int j = 0; j< BOARDWIDTH ; j++){
-					std::cout << boardKey[j][i] << ", ";
-				}
-				std::cout<< "\n";
+		std::cout << "\n";
+		std::cout<< "Board: " << "\n";
+		for (int i= BOARDHEIGHT-1; i>=0; i--){
+			std::cout << i << ": "; 
+			for (int j = 0; j< BOARDWIDTH ; j++){
+				std::cout << boardKey[j][i] << ", ";
 			}
+			std::cout<< "\n";
+		}
 	}
 
 //	void removePiece (int x, int y){
@@ -481,10 +682,10 @@ private:
 	uint16_t cursBuff = 8;
 	double lastKeyPress = 0;
 	double lastCursorPress = 0;
-	Piece selectedPiece, buffPiece;
+	Piece selectedPiece, targetPiece;
 	std::string selectedKey;
 	std::string key;
-	bool pieceSelected ;
+	bool isPieceSelected ;
 	std::string tf ="";
 
 public:
@@ -517,7 +718,7 @@ public:
 		float f_cx = static_cast<float> (cx);
 		float f_cy = static_cast<float> (cy);
 		float f_x = static_cast<float> (TILE - cursBuff*2-1);
-		if (pieceSelected) color = RED;
+		if (isPieceSelected) color = RED;
 		//else color = WHITE; 
 			if (blinkOn){	
 				DrawRectangleLinesEx((Rectangle){f_cx, f_cy, f_x, f_x}, 5.0f, color);
@@ -560,70 +761,107 @@ public:
 		
 		key = board->boardKey[x][y];
 
+	
 		now = std::chrono::system_clock::now();
 		nowDouble = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 		double debounce = 300;
 		delta = nowDouble - lastKeyPress;
 		// TODO: need to change this to off-select the cursor once plyaer hits space a second time
 
-		if (IsKeyDown(KEY_SPACE) && delta > debounce && key != "000000" && !pieceSelected){
-			pieceSelected = true;
+		if (IsKeyDown(KEY_SPACE) && delta > debounce && key != "000000" && !isPieceSelected && !board->isValidAttack(selectedPiece, targetPiece, x, y)){
+			isPieceSelected = true;
 			lastKeyPress = nowDouble;
 			selectedX = x; 
 			selectedY = y;
-			buffPiece = board->activePieces[key];
-			selectedKey = buffPiece.key;
+			selectedPiece = board->activePieces[key];
+			selectedKey = selectedPiece.key;
 		}
+		
 		now = std::chrono::system_clock::now();
 		nowDouble = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 		debounce = 500;
 		delta = nowDouble - lastKeyPress;
 
-		if (IsKeyDown(KEY_SPACE) && delta > debounce && pieceSelected && board->isValidMove(selectedKey,x ,y)){
-			pieceSelected = !pieceSelected;
+		if (IsKeyDown(KEY_SPACE) && delta > debounce && isPieceSelected && board->isValidMove(selectedKey,x ,y)){
+			isPieceSelected = !isPieceSelected;
 			lastKeyPress = nowDouble;
 			board->boardKey[selectedX][selectedY] = "000000";
 			board->boardKey[x][y] = selectedKey;
 			board->activePieces[selectedKey].x = x;
 			board->activePieces[selectedKey].y = y;
-			std::string key = selectedKey;
-			const char* c_key = key.c_str();
+			std::string skey = selectedKey;
+			const char* c_key = skey.c_str();
 			DrawText(c_key, 250, 10, 30, WHITE);		
 			turnCounter ++;
 		}
+		
+		now = std::chrono::system_clock::now();
+		nowDouble = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+		debounce = 500;
+		delta = nowDouble - lastKeyPress;
+		int tx = x;
+		int ty = y;
+		int sx = selectedPiece.x;
+		int sy = selectedPiece.y;
+		std::cout << "TEST: Selected X: "<< sx << ";  Y: " << sy << "\n";
+		// NOTE: atack update here
+		if (IsKeyDown(KEY_SPACE) &&  
+			delta > debounce && isPieceSelected && board->isValidAttack(selectedPiece, targetPiece, tx, ty)){
+			//board->boardKey[selectedX][selectedY] = "000000";
+			//board->boardKey[x][y] = selectedKey;
+			//board->activePieces[selectedKey].x = x;
+			//board->activePieces[selectedKey].y = y;
+//			std::cout << "TEST: Selected X: "<< sx << ";  Y: " << sy << "\n";
+//			std::cout << "TEST: Target Piece: " << targetPiece.key << "\n";
+//			std::cout << "TEST: Selected Piece: " << selectedPiece.key << "\n";
+			board->attack(selectedPiece, targetPiece, x, y, sx, sy);
+			isPieceSelected = !isPieceSelected;
+			selectedX = x;
+			selectedY = y;
+		}
+		key = board->boardKey[x][y];
 
-		if ((IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_ESCAPE)) && delta > debounce && pieceSelected && !board->isValidMove(selectedKey,x ,y)){
-			pieceSelected = !pieceSelected;
+// TODO: need to change escape so that it remains on the current cursor;
+// TODO: need to check that isValidMove and isValidAttack dont have overlap.
+		// FIX: need to add is !isValidAttack (not) 
+		//
+		if (IsKeyDown(KEY_SPACE) && delta > debounce && isPieceSelected && !board->isValidMove(selectedKey,x ,y)){
+			isPieceSelected = !isPieceSelected;
 			lastKeyPress = nowDouble;
-			x = selectedX;
-			y = selectedY;
+		}
+		if ( IsKeyDown(KEY_ESCAPE) && delta > debounce && isPieceSelected ){
+			isPieceSelected = !isPieceSelected;
+			lastKeyPress = nowDouble;
 		}
 
-		if (pieceSelected){
+		if (isPieceSelected){
 			// TODO: need to have this persist for the last one since last clicked
-			std::string key = "Pressed";
-			const char* c_key = key.c_str();
+			std::string skey = "Pressed";
+			const char* c_key = skey.c_str();
 			DrawText(c_key, 150, 10, 30, WHITE);
 			board->showMoves(selectedX, selectedY);
+
+			key = board->boardKey[x][y];
+			if (board->activePieces.contains(key)){
+				targetPiece = board->activePieces.find(key)->second;
+				if (board->isValidAttack(selectedPiece, targetPiece, x, y)){
+					const char* c_key = "VALID ATTACK";
+					DrawText(c_key, 500, 10, 30, WHITE);
+				}
+			 }
 		}
+		std::cout << "THIS PART RUNS" << "\n";
 
-		std::string tc_string = std::to_string(turnCounter); 
-		const char* tC_char = tc_string.c_str();
-		DrawText(tC_char, 100, 10, 30, WHITE);		
 
-	// ----- required if having cursor errors ------///
-		//if (x>BOARDWIDTH-1) x = BOARDWIDTH-1;
-		//if (x<=0) x = 0;
-		//if (y>BOARDHEIGHT-1) y = BOARDHEIGHT-1;
-		//if (y<=0) y = 0;
-	}
-
-	// NOTE: no needed;
-	void correction(){
-		if (cx<0) cx=0;
-		if (cx>BOARDWIDTH-1) cx = BOARDWIDTH -1;
-		if (cy<0) cy=0;
-		if (cy>BOARDHEIGHT-1) cx = BOARDHEIGHT -1;
+		if (board->capturedPieces.contains(key)){
+			std::cout << "Target Piece: " << targetPiece.key << "\n";
+			std::cout << "Captured Key: " << board->capturedPieces.find(key)->second.key << "\n";
+		}
+			std::cout << "Target Piece: " << targetPiece.key << "\n";
+//		if (board != nullptr){
+//			delete board;
+//			board = nullptr;
+//		}
 	}
 };
 
@@ -663,9 +901,9 @@ public:
 
 	void displayCursor(Board board, TileCursor curs){
 		std::string pieceKey = board.boardKey[curs.x][curs.y];
-		if (pieceKey != "000000"){
+		if (pieceKey != empty){
 	//		Piece piece = board.activePieces.find(pieceKey$ 
-			std::cout<< "cursor piece: X: " << curs.x << ";  Y: " << curs.y  << "\n";
+//			std::cout<< "cursor piece: X: " << curs.x << ";  Y: " << curs.y  << "\n";
 			Piece piece = board.activePieces.find(pieceKey)->second;
 			assignPiece(piece);
 		
@@ -675,9 +913,9 @@ public:
 			std::string key = board.boardKey[curs.x][curs.y];
 			const char* c_key = key.c_str();
 			DrawText(c_key, x+150, y+10, 30, WHITE);
-			string s_pos_x = std::to_string(curs.x);
+			std::string s_pos_x = std::to_string(curs.x);
 			const char* c_pos_x = s_pos_x.c_str();
-			string s_pos_y = std::to_string(curs.y);
+			std:: string s_pos_y = std::to_string(curs.y);
 			const char* c_pos_y = s_pos_y.c_str();
 			std::string strcurs = "Cursor: ";
 			const char* c_curs = strcurs.c_str();
@@ -696,9 +934,9 @@ public:
 
 	void displayPiece(Board board, Piece piece){
 		// TODO: need to fix this for 2 digits or bigger boards;
-		string s_pos_x = std::to_string(pos_x);
+		std::string s_pos_x = std::to_string(pos_x);
 		const char* c_pos_x = s_pos_x.c_str();
-		string s_pos_y = std::to_string(pos_y);
+		std::string s_pos_y = std::to_string(pos_y);
 		const char* c_pos_y = s_pos_y.c_str();
 		DrawRectangleLinesEx({x, y, width,height}, 3.0f, WHITE);
 		DrawText(c_pos_x, x+100, y+100, 20, WHITE);
@@ -713,6 +951,14 @@ public:
 		const char* c_piece_player = piece_player.c_str();
 		DrawText(c_piece_player, x+220, y+100, 20, WHITE);
 	}
+
+	//NOTE: shows turn location cursor location in toooltip
+	void displayTurnCounter(){
+		std::string tc_string = std::to_string(turnCounter); 
+		const char* tc_char = tc_string.c_str();
+		DrawText(tc_char, 100, 10, 30, WHITE);		
+	}
+
 };
 
 	
@@ -730,6 +976,42 @@ public:
 
 		int widthMultiple = grassWidth / TILE;
 		int heightMultiple = grassHeight / TILE;
+
+		// TODO: convert this to a function
+		const std::vector<std::string> abc = {
+			"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+			"AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ",
+			"BA","BB","BC","BD","BE","BF","BG","BH","BI","BJ","BK","BL","BM","BN","BO","BP","BQ","BR","BS","BT","BU","BV","BW","BX","BY","BZ",
+			"CA","CB","CC","CD","CE","CF","CG","CH","CI","CJ","CK","CL","CM","CN","CO","CP","CQ","CR","CS","CT","CU","CV","CW","CX","CY","CZ",
+			"DA","DB","DC","DD","DE","DF","DG","DH","DI","DJ","DK","DL","DM","DN","DO","DP","DQ","DR","DS","DT","DU","DV","DW","DX","DY","DZ",
+			"EA","EB","EC","ED","EE","EF","EG","EH","EI","EJ","EK","EL","EM","EN","EO","EP","EQ","ER","ES","ET","EU","EV","EW","EX","EY","EZ",
+			"FA","FB","FC","FD","FE","FF","FG","FH","FI","FJ","FK","FL","FM","FN","FO","FP","FQ","FR","FS","FT","FU","FV","FW","FX","FY","FZ",
+			"GA","GB","GC","GD","GE","GF","GG","GH","GI","GJ","GK","GL","GM","GN","GO","GP","GQ","GR","GS","GT","GU","GV","GW","GX","GY","GZ",
+			"HA","HB","HC","HD","HE","HF","HG","HH","HI","HJ","HK","HL","HM","HN","HO","HP","HQ","HR","HS","HT","HU","HV","HW","HX","HY","HZ",
+			"IA","IB","IC","ID","IE","IF","IG","IH","II","IJ","IK","IL","IM","IN","IO","IP","IQ","IR","IS","IT","IU","IV","IW","IX","IY","IZ",
+			"JA","JB","JC","JD","JE","JF","JG","JH","JI","JJ","JK","JL","JM","JN","JO","JP","JQ","JR","JS","JT","JU","JV","JW","JX","JY","JZ",
+			"KA","KB","KC","KD","KE","KF","KG","KH","KI","KJ","KK","KL","KM","KN","KO","KP","KQ","KR","KS","KT","KU","KV","KW","KX","KY","KZ",
+			"LA","LB","LC","LD","LE","LF","LG","LH","LI","LJ","LK","LL","LM","LN","LO","LP","LQ","LR","LS","LT","LU","LV","LW","LX","LY","LZ",
+			"MA","MB","MC","MD","ME","MF","MG","MH","MI","MJ","MK","ML","MM","MN","MO","MP","MQ","MR","MS","MT","MU","MV","MW","MX","MY","MZ",
+			"NA","NB","NC","ND","NE","NF","NG","NH","NI","NJ","NK","NL","NM","NN","NO","NP","NQ","NR","NS","NT","NU","NV","NW","NX","NY","NZ",
+			"OA","OB","OC","OD","OE","OF","OG","OH","OI","OJ","OK","OL","OM","ON","OO","OP","OQ","OR","OS","OT","OU","OV","OW","OX","OY","OZ",
+			"PA","PB","PC","PD","PE","PF","PG","PH","PI","PJ","PK","PL","PM","PN","PO","PP","PQ","PR","PS","PT","PU","PV","PW","PX","PY","PZ",
+			"QA","QB","QC","QD","QE","QF","QG","QH","QI","QJ","QK","QL","QM","QN","QO","QP","QQ","QR","QS","QT","QU","QV","QW","QX","QY","QZ",
+			"RA","RB","RC","RD","RE","RF","RG","RH","RI","RJ","RK","RL","RM","RN","RO","RP","RQ","RR","RS","RT","RU","RV","RW","RX","RY","RZ",
+			"SA","SB","SC","SD","SE","SF","SG","SH","SI","SJ","SK","SL","SM","SN","SO","SP","SQ","SR","SS","ST","SU","SV","SW","SX","SY","SZ",
+			"TA","TB","TC","TD","TE","TF","TG","TH","TI","TJ","TK","TL","TM","TN","TO","TP","TQ","TR","TS","TT","TU","TV","TW","TX","TY","TZ",
+			"UA","UB","UC","UD","UE","UF","UG","UH","UI","UJ","UK","UL","UM","UN","UO","UP","UQ","UR","US","UT","UU","UV","UW","UX","UY","UZ",
+			"VA","VB","VC","VD","VE","VF","VG","VH","VI","VJ","VK","VL","VM","VN","VO","VP","VQ","VR","VS","VT","VU","VV","VW","VX","VY","VZ",
+			"WA","WB","WC","WD","WE","WF","WG","WH","WI","WJ","WK","WL","WM","WN","WO","WP","WQ","WR","WS","WT","WU","WV","WW","WX","WY","WZ",
+			"XA","XB","XC","XD","XE","XF","XG","XH","XI","XJ","XK","XL","XM","XN","XO","XP","XQ","XR","XS","XT","XU","XV","XW","XX","XY","XZ",
+			"YA","YB","YC","YD","YE","YF","YG","YH","YI","YJ","YK","YL","YM","YN","YO","YP","YQ","YR","YS","YT","YU","YV","YW","YX","YY","YZ",
+			"ZA","ZB","ZC","ZD","ZE","ZF","ZG","ZH","ZI","ZJ","ZK","ZL","ZM","ZN","ZO","ZP","ZQ","ZR","ZS","ZT","ZU","ZV","ZW","ZX","ZY","ZZ",
+			"AAA","AAB","AAC","AAD","AAE","AAF","AAG","AAH","AAI","AAJ","AAK","AAL","AAM","AAN","AAO","AAP","AAQ","AAR","AAS","AAT","AAU","AAV","AAW","AAX","AAY","AAZ",
+			"ABA","ABB","ABC","ABD","ABE","ABF","ABG","ABH","ABI","ABJ","ABK","ABL","ABM","ABN","ABO","ABP","ABQ","ABR","ABS","ABT","ABU","ABV","ABW","ABX","ABY","ABZ",
+			"ACA","ACB","ACC","ACD","ACE","ACF","ACG","ACH","ACI","ACJ","ACK","ACL","ACM","ACN","ACO","ACP","ACQ","ACR","ACS","ACT","ACU","ACV","ACW","ACX","ACY","ACZ",
+			"ADA","ADB","ADC","ADD","ADE","ADF","ADG","ADH","ADI","ADJ","ADK","ADL","ADM","ADN","ADO","ADP","ADQ","ADR","ADS","ADT","ADU","ADV","ADW","ADX","ADY","ADZ"
+		};
+
 		for (int i = 0; i< BOARDWIDTH / widthMultiple ; i++){
 			for (int j = 0; j< BOARDHEIGHT / heightMultiple; j++){
 				DrawTexture(grass, i*grassWidth + FRAME_BUFFER, j*grassHeight + FRAME_BUFFER, ORANGE);
@@ -744,9 +1026,27 @@ public:
 			DrawLine(topx + i*TILE, topy, topx + i*TILE, FRAME_BUFFER + BOARDHEIGHT*TILE, WHITE); 
 		}
 
-		
+		// letters on rows
+		int letterHeight = 20;	
+		for (int i = 0; i<BOARDWIDTH; i++){
+			const char* x_char = abc[i].c_str();
+			int py = FRAME_BUFFER + TILE * BOARDHEIGHT + letterHeight;
+			int px = FRAME_BUFFER + TILE * i + TILE/4; // TODO: Need to find out the "halfway" of the character string;
+			DrawText(x_char, px, py, letterHeight, WHITE);
+		}
+
+		for (int i = 1; i<=BOARDHEIGHT; i++){
+			std::string y_str = std::to_string(i);
+			const char* y_char = y_str.c_str();
+			int px = FRAME_BUFFER / 2;
+			int py = FRAME_BUFFER + BOARDHEIGHT*TILE - TILE*i + TILE/4;
+			DrawText(y_char, px, py, letterHeight, WHITE);
+		}
+
+
 		const char* score = "SCORE";
 		DrawText( score, SCREEN_WIDTH*3/4 - 80*3/2, SCREEN_HEIGHT/10 , 80, WHITE);
+		
 	}
 };
 
@@ -829,7 +1129,7 @@ int main () {
 		textures.attacking1 = LoadTexture("../assets/FX/FX036_01.png");
 		textures.attacking2 = LoadTexture("../assets/FX/FX036_02.png");
 		textures.attacking3 = LoadTexture("../assets/FX/FX036_03.png");
-		Rectangle attRect = buildAnim(textures.attacking1, 10, 10);
+		Rectangle attRect = buildAnim(textures.attacking1, 0, 0);
 
 		firstCopper.texture = textures.Ore;
 
@@ -869,7 +1169,6 @@ int main () {
 
 		// NOTE: need to check the correct pointer and values are passed through
 
-		myCursor.update(&board);
 		std::cout<< "KEYS: ";
 		for (int i = 0; i< board.keys.size(); i++){
 			std::cout <<  board.keys[i] << ", ";
@@ -884,12 +1183,13 @@ int main () {
 //		boardPointer->boardKey[10][10] = "n001-w";
 		drawPieces(textures, &board);
 		firstCopper.draw(6,6);
-		board.printActivePieces();
+		board.printActiveCapturedPieces();
+
+		myCursor.update(&board);
 
 		tt.displayPiece(board, firstPawn);
 		tt.displayCursor(board, myCursor);
-		std::cout<< "Player cursor: " << firstPawn.player.color << "\n"; 
-		std::cout<< "COLOR: " << board.activePieces["p001-b"].player.color<< "\n";
+		tt.displayTurnCounter();
 
 		Texture2D *buffText = TextAnim3(&textures.attacking1, &textures.attacking2, &textures.attacking3, &attackAnim);
 		animation_update(&attackAnim);
@@ -913,6 +1213,9 @@ int main () {
 		UnloadTexture(textures.BlackRookTexture);
 		UnloadTexture(textures.BlackKnightTexture);
 		UnloadTexture(textures.BlackBishopTexture);
+		UnloadTexture(textures.attacking1);
+		UnloadTexture(textures.attacking2);
+		UnloadTexture(textures.attacking3);
 
 		UnloadTexture(textures.Ore);
 	}
